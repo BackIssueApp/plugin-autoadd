@@ -1,13 +1,14 @@
 // Auto-add: what a rule catches, what happens to each caught series, the
 // record that keeps a series from being added twice, following a series that
-// was caught before the list had an id for it, and a whole pass run against a
-// fake release list and a fake library.
+// was caught before the list had an id for it, holding a series for a yes when
+// its rule asks first, and a whole pass run against a fake release list and a
+// fake library.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { normalize, hasPhrase, cleanRule, ruleMatches, collect, classify, isCollected, alreadyOut, pickExisting, nameKeyOf } from '../match.js';
+import { normalize, hasPhrase, cleanRule, ruleMatches, collect, classify, isCollected, alreadyOut, pickExisting, nameKeyOf, ruleLabel } from '../match.js';
 import { openStore } from '../store.js';
 import { makeFeed, makeScanner, matchesFor } from '../scan.js';
 
@@ -39,7 +40,7 @@ test('cleanRule: a keyword is required, defaults are single issues, every issue,
   assert.ok(cleanRule({ keyword: '!' }).error);
   assert.ok(cleanRule({ keyword: 'x'.repeat(81) }).error);
   const { rule: r } = cleanRule({ keyword: '  Star   Trek ', exclude: 'omnibus, , Adventures', scope: 'bogus' });
-  assert.deepEqual(r, { keyword: 'Star Trek', publisher: '', exclude: 'omnibus, Adventures', skipCollected: true, newOnly: false, scope: 'all' });
+  assert.deepEqual(r, { keyword: 'Star Trek', publisher: '', exclude: 'omnibus, Adventures', skipCollected: true, newOnly: false, ask: false, scope: 'all', libraryId: null });
   assert.equal(cleanRule({ keyword: 'Batman', scope: 'new', skipCollected: false }).rule.scope, 'new');
   assert.equal(cleanRule({ keyword: 'Batman', skipCollected: false }).rule.skipCollected, false);
   assert.equal(cleanRule({ keyword: 'Batman', newOnly: 1 }).rule.newOnly, true);
@@ -352,5 +353,165 @@ test('a skipped series is never added', async () => {
     const { feed } = fakeFeed({ 48: [rel('Star Trek: Zero Point', { comicid: 177482 })] });
     const out = await makeScanner({ store, feed, tracked: () => new Map(), add: async () => { throw new Error('must not add'); } }).run();
     assert.equal(out.added.length, 0); assert.equal(out.failed.length, 0);
+  } finally { rm(); }
+});
+
+test('a rule with no name catches everything from its publisher, and goes by the publisher', () => {
+  assert.ok(cleanRule({}).error, 'a name or a publisher is required');
+  assert.ok(cleanRule({ publisher: 'x' }).error);
+  assert.ok(cleanRule({ keyword: 'a', publisher: 'IDW' }).error, 'a name that is given still needs two characters');
+  const { rule: r } = cleanRule({ publisher: ' IDW ', newOnly: true });
+  assert.equal(r.keyword, ''); assert.equal(r.publisher, 'IDW');
+  assert.equal(ruleLabel(r), 'IDW');
+  assert.equal(ruleLabel(cleanRule({ keyword: 'Star Trek', publisher: 'IDW' }).rule), 'Star Trek');
+  assert.equal(ruleMatches(r, rel('Anything At All')), true);
+  assert.equal(ruleMatches(r, rel('Anything At All', { publisher: 'Marvel' })), false);
+  assert.equal(ruleMatches({ ...r, exclude: 'at all' }, rel('Anything At All')), false, 'left-out words still apply');
+  assert.equal(ruleMatches({ ...r, publisher: '' }, rel('Anything At All')), false, 'a rule with neither catches nothing');
+  const rows = collect([{ ...r, id: 4, enabled: true }], [week([rel('Brand New', { comicid: 9 }), rel('Old Timer', { comicid: 8, issue: '40' }), rel('Elsewhere', { publisher: 'Marvel', comicid: 7 })])]);
+  assert.deepEqual(rows.map((m) => [m.series, m.keyword, m.ruleId]), [['Brand New', 'IDW', 4]], 'new series only still applies');
+});
+
+test('cleanRule carries ask-first and the library, and collect hands them to each match', () => {
+  assert.equal(cleanRule({ keyword: 'Batman', ask: 1 }).rule.ask, true);
+  assert.equal(cleanRule({ keyword: 'Batman', libraryId: '3' }).rule.libraryId, 3);
+  for (const bad of [0, -2, 1.5, 'x', null, undefined, '']) assert.equal(cleanRule({ keyword: 'Batman', libraryId: bad }).rule.libraryId, null);
+  const [m] = collect([rule('star trek', { ask: true, libraryId: 3 })], [week([rel('Star Trek', { comicid: 5 })])]);
+  assert.equal(m.ask, true); assert.equal(m.libraryId, 3);
+  const [plain] = collect([rule('star trek')], [week([rel('Star Trek', { comicid: 5 })])]);
+  assert.equal(plain.ask, false); assert.equal(plain.libraryId, null);
+});
+
+test('classify holds a series whose rule asks first until someone says yes', () => {
+  const rows = collect([rule('star trek', { ask: true })], [week([
+    rel('Star Trek: Known', { comicid: 5 }), rel('Star Trek: Unknown', { comicid: null }),
+    rel('Star Trek: Owned', { comicid: 6 }), rel('Star Trek: Gone', { comicid: 7 }), rel('Star Trek: No', { comicid: 8 }),
+  ])]);
+  const state = (opts) => Object.fromEntries(classify(rows, opts).map((m) => [m.series.slice(11), [m.state, m.needsOk]]));
+  const base = { tracked: new Map([[6, 60]]), handled: new Map([[7, { status: 'added' }], [8, { status: 'skipped' }]]) };
+  assert.deepEqual(state(base), {
+    Known: ['ask', true], Unknown: ['waiting', true], Owned: ['library', false], Gone: ['removed', false], No: ['skipped', false],
+  });
+  const yes = new Set([nameKeyOf('Star Trek: Known', '2026'), nameKeyOf('Star Trek: Unknown', '2026')]);
+  const after = state({ ...base, approvedKeys: yes });
+  assert.deepEqual(after.Known, ['new', false], 'a yes makes it an ordinary add');
+  assert.deepEqual(after.Unknown, ['waiting', false], 'a yes given early holds until the id arrives');
+  assert.deepEqual(state({ ...base, approvedKeys: yes, skippedKeys: yes }).Known, ['skipped', false], 'a no beats a yes');
+});
+
+test('store: ask-first and the library round-trip, and the yes, the no and the telling are kept by name', () => {
+  const { store, rm } = tmpStore();
+  try {
+    const a = store.createRule(cleanRule({ publisher: 'IDW', ask: true, libraryId: 2 }).rule);
+    assert.equal(a.keyword, ''); assert.equal(a.ask, true); assert.equal(a.libraryId, 2);
+    const b = store.updateRule(a.id, cleanRule({ keyword: 'Star Trek' }).rule);
+    assert.equal(b.keyword, 'Star Trek'); assert.equal(b.ask, false); assert.equal(b.libraryId, null); assert.equal(b.enabled, true);
+
+    const m = { nameKey: nameKeyOf('Star Trek: Held', '2026'), series: 'Star Trek: Held', seriesYear: '2026' };
+    assert.equal(store.markAsked(m.nameKey), false, 'nothing to mark before it is waiting');
+    store.pend(m);
+    assert.equal(store.markAsked(m.nameKey), true);
+    assert.equal(store.markAsked(m.nameKey), false, 'told once');
+    assert.equal(store.approvedKeys().size, 0);
+    store.approvePending(m);
+    assert.ok(store.approvedKeys().has(m.nameKey));
+    store.skipPending(m, true);
+    assert.equal(store.approvedKeys().size, 0, 'a no takes the yes back');
+    assert.ok(store.skippedKeys().has(m.nameKey));
+    store.approvePending(m);
+    assert.equal(store.skippedKeys().size, 0, 'and a yes takes the no back');
+    const other = { nameKey: nameKeyOf('Star Trek: Fresh', '2026'), series: 'Star Trek: Fresh' };
+    store.approvePending(other);
+    assert.ok(store.pendingKeys().has(other.nameKey), 'a yes for a series not seen by a pass yet starts the wait');
+  } finally { rm(); }
+});
+
+test('store: a database from before ask-first gains the new columns', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'autoadd-test-'));
+  const file = path.join(dir, 'cat.db');
+  const { default: Database } = await import('better-sqlite3');
+  const old = new Database(file);
+  old.exec(`
+    CREATE TABLE autoadd_rules (id INTEGER PRIMARY KEY AUTOINCREMENT, keyword TEXT NOT NULL, publisher TEXT NOT NULL DEFAULT '',
+      exclude TEXT NOT NULL DEFAULT '', skip_collected INTEGER NOT NULL DEFAULT 1, scope TEXT NOT NULL DEFAULT 'all',
+      enabled INTEGER NOT NULL DEFAULT 1, created_by TEXT, created_at TEXT NOT NULL DEFAULT '2026-11-01T00:00:00Z');
+    CREATE TABLE autoadd_pending (name_key TEXT PRIMARY KEY, title TEXT, year TEXT, keyword TEXT, rule_id INTEGER,
+      issue_number TEXT, ship_date TEXT, skipped INTEGER NOT NULL DEFAULT 0, first_seen TEXT NOT NULL DEFAULT '2026-11-01T00:00:00Z');
+    INSERT INTO autoadd_rules (keyword) VALUES ('Star Trek');
+    INSERT INTO autoadd_pending (name_key, title) VALUES ('star trek held|2026', 'Star Trek: Held');
+  `);
+  old.close();
+  const store = openStore(file);
+  try {
+    const [r] = store.rules();
+    assert.equal(r.keyword, 'Star Trek'); assert.equal(r.ask, false); assert.equal(r.newOnly, false); assert.equal(r.libraryId, null);
+    assert.equal(store.approvedKeys().size, 0);
+    assert.equal(store.markAsked('star trek held|2026'), true);
+  } finally { store.close(); fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('a rule that asks first adds nothing until someone says yes, and says so once', async () => {
+  const { store, rm } = tmpStore();
+  try {
+    store.createRule(cleanRule({ keyword: 'star trek', ask: true, libraryId: 2 }).rule);
+    const byWeek = { 48: [rel('Star Trek: Known', { comicid: 700 }), rel('Star Trek: Unknown', { comicid: null })] };
+    const { feed } = fakeFeed(byWeek);
+    const library = new Map(); const added = []; const asked = []; const coming = [];
+    const scanner = makeScanner({
+      store, feed, tracked: () => new Map(library),
+      add: async (m) => { library.set(m.cvId, 70 + added.length); added.push([m.series, m.libraryId]); return { seriesId: library.get(m.cvId) }; },
+      onAsk: (m) => asked.push(m.series), onWaiting: (m) => coming.push([m.series, m.needsOk]),
+    });
+    const first = await scanner.run();
+    assert.equal(first.added.length, 0); assert.equal(first.asking, 1); assert.equal(first.waiting, 1);
+    assert.deepEqual(asked, ['Star Trek: Known']);
+    assert.deepEqual(coming, [['Star Trek: Unknown', true]], 'the early notice knows the rule asks first');
+    await scanner.run();
+    assert.equal(asked.length, 1, 'not asked a second time'); assert.equal(coming.length, 1);
+    assert.equal(added.length, 0);
+
+    // Yes to the one still waiting for its record; the other is left unanswered.
+    const { matches } = await matchesFor(store.rules(), { feed, tracked: () => new Map(library), store });
+    store.approvePending(matches.find((m) => m.series === 'Star Trek: Unknown'));
+    await scanner.run();
+    assert.equal(added.length, 0, 'still no record to add it from');
+
+    // Its record arrives: the approved one is added to the rule's library,
+    // the unanswered one keeps waiting for its answer and is not asked again.
+    byWeek[48] = [rel('Star Trek: Known', { comicid: 700 }), rel('Star Trek: Unknown', { comicid: 701 })];
+    const later = await scanner.run();
+    assert.deepEqual(added, [['Star Trek: Unknown', 2]]);
+    assert.equal(later.asking, 1);
+    assert.equal(asked.length, 1);
+    assert.equal(store.handled().get(701).status, 'added');
+    assert.ok(store.pendingKeys().has(nameKeyOf('Star Trek: Known', '2026')), 'the unanswered one is still followed');
+
+    // A series first seen while waiting is asked about once its record is there.
+    byWeek[48].push(rel('Star Trek: Late', { comicid: null }));
+    await scanner.run();
+    byWeek[48][2] = rel('Star Trek: Late', { comicid: 702 });
+    await scanner.run();
+    assert.deepEqual(asked, ['Star Trek: Known', 'Star Trek: Late']);
+    assert.equal(added.length, 1);
+  } finally { rm(); }
+});
+
+test('an unanswered series is followed after it ships, and a no ends it', async () => {
+  const { store, rm } = tmpStore();
+  try {
+    store.createRule(cleanRule({ keyword: 'star trek', ask: true }).rule);
+    const byWeek = { 48: [rel('Star Trek: Held', { comicid: 800, shipdate: '2026-11-25' })] };
+    const { feed } = fakeFeed(byWeek, { ahead: 1, back: 1 });
+    const scanner = makeScanner({ store, feed, tracked: () => new Map(), add: async () => { throw new Error('must not add'); } });
+    assert.equal((await scanner.run()).asking, 1);
+    delete byWeek[48];
+    byWeek[47] = [rel('Star Trek: Held', { comicid: 800, shipdate: '2026-11-25' })];
+    assert.equal((await scanner.run()).asking, 1, 'still held in a week gone by');
+    const { matches } = await matchesFor(store.rules(), { feed, tracked: () => new Map(), store });
+    assert.equal(matches[0].state, 'ask');
+    store.record('skipped', matches[0], null);
+    const out = await scanner.run();
+    assert.equal(out.asking, 0); assert.equal(out.added.length, 0);
+    assert.equal(store.pendingKeys().size, 0, 'answered: no longer followed by name');
   } finally { rm(); }
 });

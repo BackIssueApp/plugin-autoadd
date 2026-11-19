@@ -1,7 +1,8 @@
 {
   "error": {
     "duplicate": "Ya existe una regla igual.",
-    "gone": "Esa serie ya no está pendiente de añadirse."
+    "gone": "Esa serie ya no está pendiente de añadirse.",
+    "library": "Esa biblioteca ya no existe."
   },
   "match": {
     "shipped": "El n.º {number} salió el {date}",
@@ -13,22 +14,49 @@
   "state": {
     "new": "Se añadirá",
     "waiting": "A la espera de datos",
+    "ask": "Necesita tu visto bueno",
     "library": "En tu biblioteca",
     "skipped": "Omitida",
     "removed": "Eliminada de tu biblioteca"
   },
+  "form": {
+    "libraryDefault": "Biblioteca predeterminada",
+    "editing": "Cambiando la regla «{keyword}»",
+    "saveChanges": "Guardar cambios",
+    "save": "Guardar regla",
+    "updated": "Regla actualizada",
+    "saved": "Regla guardada",
+    "keyword": "El nombre de la serie contiene",
+    "keywordHint": "p. ej. Star Trek",
+    "keywordEmpty": "Deja este campo vacío e indica una editorial para captar todas las series que esa editorial tenga por salir.",
+    "publisher": "Editorial (opcional)",
+    "exclude": "Dejar fuera los nombres que contengan (opcional)",
+    "excludeHint": "Palabras separadas por comas",
+    "scope": "Descargar",
+    "scopeAll": "Todos los números de la serie",
+    "scopeNew": "Solo el próximo número y los siguientes",
+    "library": "Añadir a",
+    "newOnly": "Solo series nuevas (dejar fuera las que ya pasaron de su primer número)",
+    "ask": "Preguntar antes de añadir (cada serie espera tu visto bueno en esta página)",
+    "collected": "Solo números sueltos (sin tomos en rústica, tapa dura ni ómnibus)",
+    "cancel": "Cancelar"
+  },
   "rule": {
+    "everything": "Todo lo de {publisher}",
     "publisher": "Editorial: {publisher}",
     "exclude": "Sin: {words}",
     "newOnly": "Solo series nuevas",
+    "ask": "Pregunta antes de añadir",
     "noCollected": "Solo números sueltos",
     "withCollected": "También recopilatorios",
     "scopeNew": "Desde el próximo número",
-    "scopeAll": "Todos los números"
+    "scopeAll": "Todos los números",
+    "library": "Biblioteca: {library}"
   },
   "rules": {
     "empty": "Aún no hay reglas. Escribe una abajo.",
     "toggle": "Activar o desactivar esta regla",
+    "edit": "Editar",
     "delete": "Eliminar",
     "deleteConfirm": "¿Eliminar la regla «{keyword}»? Las series que ya añadió siguen en tu biblioteca.",
     "deleted": "Regla eliminada",
@@ -87,30 +115,24 @@
     "count": {
       "one": "Esta regla capta {count} serie en las próximas {weeks} semanas:",
       "other": "Esta regla capta {count} series en las próximas {weeks} semanas:"
+    },
+    "more": {
+      "one": "y {count} más",
+      "other": "y {count} más"
     }
-  },
-  "form": {
-    "saved": "Regla guardada",
-    "keyword": "El nombre de la serie contiene",
-    "keywordHint": "p. ej. Star Trek",
-    "publisher": "Editorial (opcional)",
-    "exclude": "Dejar fuera los nombres que contengan (opcional)",
-    "excludeHint": "Palabras separadas por comas",
-    "scope": "Descargar",
-    "scopeAll": "Todos los números de la serie",
-    "scopeNew": "Solo el próximo número y los siguientes",
-    "newOnly": "Solo series nuevas (dejar fuera las que ya pasaron de su primer número)",
-    "collected": "Solo números sueltos (sin tomos en rústica, tapa dura ni ómnibus)",
-    "save": "Guardar regla"
   },
   "matches": {
     "loading": "Leyendo la lista de novedades…",
     "empty": "Todavía nada coincide con tus reglas en las próximas {weeks} semanas.",
     "noRules": "Aquí aparecen las series que captan tus reglas.",
     "skip": "Omitir",
+    "add": "Añadir",
+    "addWhenReady": "Añadir cuando se pueda",
     "allow": "Permitir",
     "addAgain": "Añadir de nuevo",
     "open": "Abrir",
+    "added": "{title} añadida",
+    "approved": "{title} se añadirá en cuanto sus datos estén disponibles.",
     "heading": "Captadas en las próximas semanas"
   },
   "history": {
@@ -158,6 +180,18 @@
       },
       "autoaddMore": {
         "title": "{count} series más añadidas",
+        "body": "La lista completa está en Adición automática."
+      },
+      "autoaddWaitingAsk": {
+        "title": "Próximamente: {title}",
+        "body": "Sale el {date} y coincide con tu regla «{keyword}». Indica en la página Adición automática si quieres añadirla."
+      },
+      "autoaddAsk": {
+        "title": "Necesita tu visto bueno: {title}",
+        "body": "Coincide con tu regla «{keyword}». Añádela u omítela en la página Adición automática."
+      },
+      "autoaddAskMore": {
+        "title": "{count} series más necesitan tu visto bueno",
         "body": "La lista completa está en Adición automática."
       }
     }

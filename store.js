@@ -3,7 +3,9 @@
 // every series a rule has dealt with (added, or skipped by hand), which is
 // what keeps a series from being added a second time after it was removed.
 // autoadd_pending holds the series a rule caught before the release list had
-// a catalog id for them: they are known by name until the id arrives.
+// a catalog id for them: they are known by name until the id arrives. A
+// series held for a yes or no (its rule asks first) is kept there too, with
+// the answer once there is one.
 import Database from 'better-sqlite3';
 
 const NOW = "strftime('%Y-%m-%dT%H:%M:%SZ','now')";
@@ -20,6 +22,8 @@ export function openStore(dbPath) {
       exclude TEXT NOT NULL DEFAULT '',
       skip_collected INTEGER NOT NULL DEFAULT 1,
       new_only INTEGER NOT NULL DEFAULT 0,
+      ask INTEGER NOT NULL DEFAULT 0,             -- hold each series for a yes or no
+      library_id INTEGER,                         -- where series go; null = the default library
       scope TEXT NOT NULL DEFAULT 'all',          -- all | new
       enabled INTEGER NOT NULL DEFAULT 1,
       created_by TEXT,
@@ -40,6 +44,8 @@ export function openStore(dbPath) {
       title TEXT, year TEXT, keyword TEXT, rule_id INTEGER,
       issue_number TEXT, ship_date TEXT,
       skipped INTEGER NOT NULL DEFAULT 0,
+      approved INTEGER NOT NULL DEFAULT 0,        -- someone said yes to a rule that asks first
+      asked INTEGER NOT NULL DEFAULT 0,           -- people were told it needs a yes or no
       first_seen TEXT NOT NULL DEFAULT (${NOW})
     );
     CREATE TABLE IF NOT EXISTS autoadd_meta (key TEXT PRIMARY KEY, value TEXT);
@@ -47,10 +53,16 @@ export function openStore(dbPath) {
   // Columns added after the first build.
   const ruleCols = db.prepare("SELECT name FROM pragma_table_info('autoadd_rules')").all().map((r) => r.name);
   if (!ruleCols.includes('new_only')) db.exec('ALTER TABLE autoadd_rules ADD COLUMN new_only INTEGER NOT NULL DEFAULT 0');
+  if (!ruleCols.includes('ask')) db.exec('ALTER TABLE autoadd_rules ADD COLUMN ask INTEGER NOT NULL DEFAULT 0');
+  if (!ruleCols.includes('library_id')) db.exec('ALTER TABLE autoadd_rules ADD COLUMN library_id INTEGER');
+  const pendingCols = db.prepare("SELECT name FROM pragma_table_info('autoadd_pending')").all().map((r) => r.name);
+  if (!pendingCols.includes('approved')) db.exec('ALTER TABLE autoadd_pending ADD COLUMN approved INTEGER NOT NULL DEFAULT 0');
+  if (!pendingCols.includes('asked')) db.exec('ALTER TABLE autoadd_pending ADD COLUMN asked INTEGER NOT NULL DEFAULT 0');
 
   const shape = (r) => r && ({
     id: r.id, keyword: r.keyword, publisher: r.publisher || '', exclude: r.exclude || '',
-    skipCollected: !!r.skip_collected, newOnly: !!r.new_only, scope: r.scope === 'new' ? 'new' : 'all',
+    skipCollected: !!r.skip_collected, newOnly: !!r.new_only, ask: !!r.ask, scope: r.scope === 'new' ? 'new' : 'all',
+    libraryId: r.library_id ?? null,
     enabled: !!r.enabled, createdBy: r.created_by || null, createdAt: r.created_at,
   });
 
@@ -61,8 +73,8 @@ export function openStore(dbPath) {
     rule: (id) => shape(db.prepare('SELECT * FROM autoadd_rules WHERE id = ?').get(Number(id))),
 
     createRule(rule, byName = null) {
-      const r = db.prepare(`INSERT INTO autoadd_rules (keyword, publisher, exclude, skip_collected, new_only, scope, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?)`).run(rule.keyword, rule.publisher || '', rule.exclude || '', rule.skipCollected ? 1 : 0, rule.newOnly ? 1 : 0, rule.scope, byName);
+      const r = db.prepare(`INSERT INTO autoadd_rules (keyword, publisher, exclude, skip_collected, new_only, ask, library_id, scope, created_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(rule.keyword || '', rule.publisher || '', rule.exclude || '', rule.skipCollected ? 1 : 0, rule.newOnly ? 1 : 0, rule.ask ? 1 : 0, rule.libraryId ?? null, rule.scope, byName);
       return this.rule(r.lastInsertRowid);
     },
 
@@ -71,8 +83,8 @@ export function openStore(dbPath) {
       const cur = this.rule(id);
       if (!cur) return null;
       const next = { ...cur, ...patch };
-      db.prepare('UPDATE autoadd_rules SET keyword=?, publisher=?, exclude=?, skip_collected=?, new_only=?, scope=?, enabled=? WHERE id=?')
-        .run(next.keyword, next.publisher || '', next.exclude || '', next.skipCollected ? 1 : 0, next.newOnly ? 1 : 0, next.scope, next.enabled ? 1 : 0, cur.id);
+      db.prepare('UPDATE autoadd_rules SET keyword=?, publisher=?, exclude=?, skip_collected=?, new_only=?, ask=?, library_id=?, scope=?, enabled=? WHERE id=?')
+        .run(next.keyword || '', next.publisher || '', next.exclude || '', next.skipCollected ? 1 : 0, next.newOnly ? 1 : 0, next.ask ? 1 : 0, next.libraryId ?? null, next.scope, next.enabled ? 1 : 0, cur.id);
       return this.rule(cur.id);
     },
 
@@ -110,6 +122,7 @@ export function openStore(dbPath) {
     // followed up even after its issues have left the weeks ahead.
     pendingKeys: () => new Set(db.prepare('SELECT name_key FROM autoadd_pending').all().map((r) => r.name_key)),
     skippedKeys: () => new Set(db.prepare('SELECT name_key FROM autoadd_pending WHERE skipped = 1').all().map((r) => r.name_key)),
+    approvedKeys: () => new Set(db.prepare('SELECT name_key FROM autoadd_pending WHERE approved = 1').all().map((r) => r.name_key)),
 
     // Start waiting on a series. True the first time it is seen, which is
     // when people are told about it.
@@ -120,8 +133,17 @@ export function openStore(dbPath) {
     // "Not this one" for a series that is still waiting, and taking it back.
     skipPending(m, skipped = true) {
       this.pend(m);
-      return db.prepare('UPDATE autoadd_pending SET skipped = ? WHERE name_key = ?').run(skipped ? 1 : 0, m.nameKey).changes > 0;
+      return db.prepare('UPDATE autoadd_pending SET skipped = ?, approved = CASE WHEN ? THEN 0 ELSE approved END WHERE name_key = ?').run(skipped ? 1 : 0, skipped ? 1 : 0, m.nameKey).changes > 0;
     },
+    // "Yes, this one" for a series whose rule asks first, said before the
+    // catalog has a record for it: it is added when the record arrives.
+    approvePending(m) {
+      this.pend(m);
+      return db.prepare('UPDATE autoadd_pending SET approved = 1, skipped = 0 WHERE name_key = ?').run(m.nameKey).changes > 0;
+    },
+    // True the first time a series is found to need a yes or no, which is
+    // when people are told so.
+    markAsked: (nameKey) => db.prepare('UPDATE autoadd_pending SET asked = 1 WHERE name_key = ? AND asked = 0').run(String(nameKey)).changes > 0,
     unskipPending: (nameKey) => db.prepare('UPDATE autoadd_pending SET skipped = 0 WHERE name_key = ? AND skipped = 1').run(String(nameKey)).changes > 0,
     unpend: (nameKey) => db.prepare('DELETE FROM autoadd_pending WHERE name_key = ?').run(String(nameKey)).changes > 0,
     // A series that never got its id is let go after a few months.

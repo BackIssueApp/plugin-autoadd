@@ -1,7 +1,8 @@
 {
   "error": {
     "duplicate": "Taka reguła już istnieje.",
-    "gone": "Ta seria nie czeka już na dodanie."
+    "gone": "Ta seria nie czeka już na dodanie.",
+    "library": "Ta biblioteka już nie istnieje."
   },
   "match": {
     "shipped": "Nr {number} ukazał się {date}",
@@ -13,22 +14,49 @@
   "state": {
     "new": "Zostanie dodana",
     "waiting": "Czeka na dane",
+    "ask": "Czeka na twoją zgodę",
     "library": "W twojej bibliotece",
     "skipped": "Pominięta",
     "removed": "Usunięta z twojej biblioteki"
   },
+  "form": {
+    "libraryDefault": "Biblioteka domyślna",
+    "editing": "Zmiana reguły „{keyword}”",
+    "saveChanges": "Zapisz zmiany",
+    "save": "Zapisz regułę",
+    "updated": "Reguła zaktualizowana",
+    "saved": "Reguła zapisana",
+    "keyword": "Nazwa serii zawiera",
+    "keywordHint": "np. Star Trek",
+    "keywordEmpty": "Zostaw to pole puste i podaj wydawcę, aby wyłapać każdą nadchodzącą serię tego wydawcy.",
+    "publisher": "Wydawca (opcjonalnie)",
+    "exclude": "Pomiń nazwy zawierające (opcjonalnie)",
+    "excludeHint": "Słowa oddzielone przecinkami",
+    "scope": "Pobieraj",
+    "scopeAll": "Każdy zeszyt serii",
+    "scopeNew": "Tylko najbliższy zeszyt i kolejne",
+    "library": "Dodaj do",
+    "newOnly": "Tylko nowe serie (pomiń serie, które mają już za sobą pierwszy zeszyt)",
+    "ask": "Pytaj przed dodaniem (każda seria czeka na twoją zgodę na tej stronie)",
+    "collected": "Tylko pojedyncze zeszyty (bez wydań w miękkiej i twardej oprawie oraz omnibusów)",
+    "cancel": "Anuluj"
+  },
   "rule": {
+    "everything": "Wszystko od {publisher}",
     "publisher": "Wydawca: {publisher}",
     "exclude": "Bez: {words}",
     "newOnly": "Tylko nowe serie",
+    "ask": "Pyta przed dodaniem",
     "noCollected": "Tylko pojedyncze zeszyty",
     "withCollected": "Także wydania zbiorcze",
     "scopeNew": "Od najbliższego zeszytu",
-    "scopeAll": "Każdy zeszyt"
+    "scopeAll": "Każdy zeszyt",
+    "library": "Biblioteka: {library}"
   },
   "rules": {
     "empty": "Nie ma jeszcze reguł. Napisz jedną poniżej.",
     "toggle": "Włącz lub wyłącz tę regułę",
+    "edit": "Edytuj",
     "delete": "Usuń",
     "deleteConfirm": "Usunąć regułę „{keyword}”? Serie, które już dodała, zostaną w twojej bibliotece.",
     "deleted": "Reguła usunięta",
@@ -103,30 +131,26 @@
       "few": "Ta reguła wyłapuje {count} serie w najbliższych {weeks} tygodniach:",
       "many": "Ta reguła wyłapuje {count} serii w najbliższych {weeks} tygodniach:",
       "other": "Ta reguła wyłapuje {count} serii w najbliższych {weeks} tygodniach:"
+    },
+    "more": {
+      "one": "i jeszcze {count}",
+      "few": "i jeszcze {count}",
+      "many": "i jeszcze {count}",
+      "other": "i jeszcze {count}"
     }
-  },
-  "form": {
-    "saved": "Reguła zapisana",
-    "keyword": "Nazwa serii zawiera",
-    "keywordHint": "np. Star Trek",
-    "publisher": "Wydawca (opcjonalnie)",
-    "exclude": "Pomiń nazwy zawierające (opcjonalnie)",
-    "excludeHint": "Słowa oddzielone przecinkami",
-    "scope": "Pobieraj",
-    "scopeAll": "Każdy zeszyt serii",
-    "scopeNew": "Tylko najbliższy zeszyt i kolejne",
-    "newOnly": "Tylko nowe serie (pomiń serie, które mają już za sobą pierwszy zeszyt)",
-    "collected": "Tylko pojedyncze zeszyty (bez wydań w miękkiej i twardej oprawie oraz omnibusów)",
-    "save": "Zapisz regułę"
   },
   "matches": {
     "loading": "Odczytywanie listy premier…",
     "empty": "W najbliższych {weeks} tygodniach nic jeszcze nie pasuje do twoich reguł.",
     "noRules": "Tu pojawiają się serie wyłapane przez twoje reguły.",
     "skip": "Pomiń",
+    "add": "Dodaj",
+    "addWhenReady": "Dodaj, gdy będzie to możliwe",
     "allow": "Zezwól",
     "addAgain": "Dodaj ponownie",
     "open": "Otwórz",
+    "added": "Dodano: {title}",
+    "approved": "{title} zostanie dodana, gdy tylko jej dane będą dostępne.",
     "heading": "Wyłapane w nadchodzących tygodniach"
   },
   "history": {
@@ -174,6 +198,18 @@
       },
       "autoaddMore": {
         "title": "Dodano jeszcze serie: {count}",
+        "body": "Pełna lista jest w Automatycznym dodawaniu."
+      },
+      "autoaddWaitingAsk": {
+        "title": "Wkrótce: {title}",
+        "body": "Ukaże się {date} i pasuje do twojej reguły „{keyword}”. Zdecyduj na stronie Automatyczne dodawanie, czy ją dodać."
+      },
+      "autoaddAsk": {
+        "title": "Czeka na twoją zgodę: {title}",
+        "body": "Pasuje do twojej reguły „{keyword}”. Dodaj ją lub pomiń na stronie Automatyczne dodawanie."
+      },
+      "autoaddAskMore": {
+        "title": "Na twoją zgodę czekają jeszcze serie: {count}",
         "body": "Pełna lista jest w Automatycznym dodawaniu."
       }
     }

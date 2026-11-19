@@ -1,7 +1,8 @@
 {
   "error": {
     "duplicate": "Eine solche Regel gibt es bereits.",
-    "gone": "Diese Serie wartet nicht mehr darauf, hinzugefügt zu werden."
+    "gone": "Diese Serie wartet nicht mehr darauf, hinzugefügt zu werden.",
+    "library": "Diese Bibliothek gibt es nicht mehr."
   },
   "match": {
     "shipped": "Nr. {number} erschien am {date}",
@@ -13,22 +14,49 @@
   "state": {
     "new": "Wird hinzugefügt",
     "waiting": "Wartet auf Angaben",
+    "ask": "Wartet auf dein OK",
     "library": "In deiner Bibliothek",
     "skipped": "Übersprungen",
     "removed": "Aus deiner Bibliothek entfernt"
   },
+  "form": {
+    "libraryDefault": "Standardbibliothek",
+    "editing": "Regel „{keyword}“ wird geändert",
+    "saveChanges": "Änderungen speichern",
+    "save": "Regel speichern",
+    "updated": "Regel geändert",
+    "saved": "Regel gespeichert",
+    "keyword": "Serienname enthält",
+    "keywordHint": "z. B. Star Trek",
+    "keywordEmpty": "Lass dieses Feld leer und gib einen Verlag an, um jede kommende Serie dieses Verlags zu erfassen.",
+    "publisher": "Verlag (optional)",
+    "exclude": "Namen auslassen, die Folgendes enthalten (optional)",
+    "excludeHint": "Wörter, durch Kommas getrennt",
+    "scope": "Herunterladen",
+    "scopeAll": "Jedes Heft der Serie",
+    "scopeNew": "Nur das nächste Heft und spätere",
+    "library": "Hinzufügen zu",
+    "newOnly": "Nur neue Serien (Serien auslassen, die schon über ihr erstes Heft hinaus sind)",
+    "ask": "Vor dem Hinzufügen fragen (jede Serie wartet auf dieser Seite auf dein OK)",
+    "collected": "Nur Einzelhefte (ohne Paperbacks, Hardcover und Omnibus-Ausgaben)",
+    "cancel": "Abbrechen"
+  },
   "rule": {
+    "everything": "Alles von {publisher}",
     "publisher": "Verlag: {publisher}",
     "exclude": "Ohne: {words}",
     "newOnly": "Nur neue Serien",
+    "ask": "Fragt vor dem Hinzufügen",
     "noCollected": "Nur Einzelhefte",
     "withCollected": "Auch Sammelbände",
     "scopeNew": "Ab dem nächsten Heft",
-    "scopeAll": "Jedes Heft"
+    "scopeAll": "Jedes Heft",
+    "library": "Bibliothek: {library}"
   },
   "rules": {
     "empty": "Noch keine Regeln. Schreib unten eine.",
     "toggle": "Diese Regel ein- oder ausschalten",
+    "edit": "Bearbeiten",
     "delete": "Löschen",
     "deleteConfirm": "Die Regel „{keyword}“ löschen? Serien, die sie schon hinzugefügt hat, bleiben in deiner Bibliothek.",
     "deleted": "Regel gelöscht",
@@ -87,30 +115,24 @@
     "count": {
       "one": "Diese Regel erfasst {count} Serie in den nächsten {weeks} Wochen:",
       "other": "Diese Regel erfasst {count} Serien in den nächsten {weeks} Wochen:"
+    },
+    "more": {
+      "one": "und {count} weitere",
+      "other": "und {count} weitere"
     }
-  },
-  "form": {
-    "saved": "Regel gespeichert",
-    "keyword": "Serienname enthält",
-    "keywordHint": "z. B. Star Trek",
-    "publisher": "Verlag (optional)",
-    "exclude": "Namen auslassen, die Folgendes enthalten (optional)",
-    "excludeHint": "Wörter, durch Kommas getrennt",
-    "scope": "Herunterladen",
-    "scopeAll": "Jedes Heft der Serie",
-    "scopeNew": "Nur das nächste Heft und spätere",
-    "newOnly": "Nur neue Serien (Serien auslassen, die schon über ihr erstes Heft hinaus sind)",
-    "collected": "Nur Einzelhefte (ohne Paperbacks, Hardcover und Omnibus-Ausgaben)",
-    "save": "Regel speichern"
   },
   "matches": {
     "loading": "Die Liste der Neuerscheinungen wird gelesen…",
     "empty": "In den nächsten {weeks} Wochen passt noch nichts zu deinen Regeln.",
     "noRules": "Serien, die deine Regeln erfassen, erscheinen hier.",
     "skip": "Überspringen",
+    "add": "Hinzufügen",
+    "addWhenReady": "Hinzufügen, sobald möglich",
     "allow": "Zulassen",
     "addAgain": "Erneut hinzufügen",
     "open": "Öffnen",
+    "added": "{title} hinzugefügt",
+    "approved": "{title} wird hinzugefügt, sobald die Angaben vorliegen.",
     "heading": "In den kommenden Wochen erfasst"
   },
   "history": {
@@ -158,6 +180,18 @@
       },
       "autoaddMore": {
         "title": "{count} weitere Serien hinzugefügt",
+        "body": "Die vollständige Liste steht unter Auto-Hinzufügen."
+      },
+      "autoaddWaitingAsk": {
+        "title": "Demnächst: {title}",
+        "body": "Sie erscheint am {date} und passt zu deiner Regel „{keyword}“. Entscheide auf der Seite Auto-Hinzufügen, ob sie hinzugefügt wird."
+      },
+      "autoaddAsk": {
+        "title": "Wartet auf dein OK: {title}",
+        "body": "Sie passt zu deiner Regel „{keyword}“. Füge sie auf der Seite Auto-Hinzufügen hinzu oder überspringe sie."
+      },
+      "autoaddAskMore": {
+        "title": "{count} weitere Serien warten auf dein OK",
         "body": "Die vollständige Liste steht unter Auto-Hinzufügen."
       }
     }

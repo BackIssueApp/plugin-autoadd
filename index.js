@@ -1,7 +1,8 @@
 // Auto-add plugin for BackIssue: keyword rules that add upcoming series to
 // the library before anyone has heard of them. A rule is a phrase ("star
-// trek"), optionally narrowed by publisher and by words to leave out. Twice a
-// day the weekly release list is read for this week and the eight after it.
+// trek"), optionally narrowed by publisher and by words to leave out, or a
+// publisher on its own. Twice a day the weekly release list is read for this
+// week and the eight after it.
 // A series whose name a rule catches, and that is not in the library yet, is
 // announced the moment it is caught and added as soon as the catalog has a
 // record for it, then monitored like any series added by hand. Its issues
@@ -9,8 +10,9 @@
 //
 // A series is added once. Deleting it afterwards does not bring it back, and
 // "Skip" on the page keeps a caught series out before it is added. A rule can
-// also be pointed at the catalog's existing series, to add the back catalogue
-// by hand.
+// ask first, so each series it catches waits for a yes on the page, and it can
+// name the library its series go to. A rule can also be pointed at the
+// catalog's existing series, to add the back catalogue by hand.
 import Database from 'better-sqlite3';
 import config from '../../src/config.js';
 import { makeCvClient } from '../../src/cv.js';
@@ -67,9 +69,16 @@ export default async function register(api) {
     for (const s of db.prepare('SELECT id, cv_id FROM series WHERE cv_id IS NOT NULL').all()) m.set(s.cv_id, s.id);
     return m;
   };
-  // The catalog, asked through the default library's sources like a manual add.
-  const catalog = (db) => {
-    const lib = coreDb.defaultLibrary?.(db)?.id ?? null;
+  // The library a rule names, when it is still there and holds comics (the
+  // release list is a comics list). Anything else means the default library.
+  const comicLibrary = (db, id) => {
+    if (id == null) return null;
+    try { const lib = coreDb.getLibrary?.(db, Number(id)); return lib && lib.type === 'comic' ? lib : null; }
+    catch { return null; }
+  };
+  // The catalog, asked through the destination library's sources like a manual add.
+  const catalog = (db, libraryId = null) => {
+    const lib = comicLibrary(db, libraryId)?.id ?? coreDb.defaultLibrary?.(db)?.id ?? null;
     return makeCvClient(config, lib != null ? { libraryId: lib } : {});
   };
 
@@ -79,13 +88,16 @@ export default async function register(api) {
     shiftWeek: releases.shiftWeek,
   });
 
-  // Put one series in the library: monitored for every issue, or from the
-  // issue that is about to ship when the rule says so. Issues already out are
+  // Put one series in the library (the one its rule names, or the default):
+  // monitored for every issue, or from the issue that is about to ship when
+  // the rule says so. Issues already out are
   // queued the way a manual add queues them (the "download on add" setting
   // decides); the ones the release list still has ahead are left to the app's
   // release-day lanes.
   const adder = (db, startDownloads) => async (m) => {
-    const r = await addSeriesFromCv(db, catalog(db), m.cvId, { monitor: 'all' });
+    const r = await addSeriesFromCv(db, catalog(db, m.libraryId), m.cvId, { monitor: 'all' });
+    const home = r.outcome === 'created' ? comicLibrary(db, m.libraryId) : null;
+    if (home) { try { coreDb.assignSeriesLibrary?.(db, r.seriesId, home.id); } catch { /* the library went away: it stays in the default one */ } }
     if (r.outcome === 'created' && m.scope === 'new' && m.number != null) {
       try { coreDb.setMonitor(db, r.seriesId, 'new', { from: m.number }); } catch { /* keeps "all" */ }
     }
@@ -110,7 +122,7 @@ export default async function register(api) {
   // kind, then one that counts the rest of what was added.
   const NOTE_EACH = 5;
   const announcer = (db) => {
-    let added = 0; let waiting = 0;
+    let added = 0; let waiting = 0; let asking = 0;
     const tell = (event) => { try { notifications.notify?.(db, event); } catch { /* best-effort */ } };
     return {
       // Caught, but the catalog has no record of it yet.
@@ -118,10 +130,24 @@ export default async function register(api) {
         log('info', `Caught ${m.series} (rule "${m.keyword}"): waiting for its catalog record`);
         if (!m.shipdate || ++waiting > NOTE_EACH) return;
         tell({
-          type: 'autoadd.waiting', category: 'release', level: 'info',
+          type: m.needsOk ? 'autoadd.waitingAsk' : 'autoadd.waiting', category: 'release', level: 'info',
           title: `Coming up: ${m.series}`,
-          body: `It ships ${m.shipdate} and matches your rule “${m.keyword}”. It is added as soon as its details are available.`,
+          body: `It ships ${m.shipdate} and matches your rule “${m.keyword}”. ` + (m.needsOk
+            ? 'Say on the Auto-add page whether to add it.'
+            : 'It is added as soon as its details are available.'),
           params: { title: m.series, keyword: m.keyword, date: m.shipdate },
+        });
+      },
+      // Its rule asks first, and the catalog has its record: it can be added
+      // the moment someone says yes.
+      ask(m) {
+        log('info', `Caught ${m.series} (rule "${m.keyword}"): waiting for a yes or no`);
+        if (++asking > NOTE_EACH) return;
+        tell({
+          type: 'autoadd.ask', category: 'release', level: 'info',
+          title: `Needs your OK: ${m.series}`,
+          body: `It matches your rule “${m.keyword}”. Add or skip it on the Auto-add page.`,
+          params: { title: m.series, keyword: m.keyword },
         });
       },
       added(done) {
@@ -137,6 +163,15 @@ export default async function register(api) {
         });
       },
       rest() {
+        if (asking > NOTE_EACH) {
+          const count = asking - NOTE_EACH;
+          tell({
+            type: 'autoadd.askMore', category: 'release', level: 'info',
+            title: `${count} more series need your OK`,
+            body: 'Auto-add has the full list.',
+            params: { count },
+          });
+        }
         if (added <= NOTE_EACH) return;
         const count = added - NOTE_EACH;
         tell({
@@ -155,15 +190,15 @@ export default async function register(api) {
   async function runPass(db, startDownloads) {
     if (scanner?.busy()) return scanner.run();
     const say = announcer(db);
-    scanner = makeScanner({ store, feed, tracked: trackedIn(db), add: adder(db, startDownloads), onAdded: say.added, onWaiting: say.waiting, log });
+    scanner = makeScanner({ store, feed, tracked: trackedIn(db), add: adder(db, startDownloads), onAdded: say.added, onWaiting: say.waiting, onAsk: say.ask, log });
     try {
       const summary = await scanner.run();
       say.rest();
-      if (summary.added.length || summary.failed.length) log('info', `Auto-add: ${summary.added.length} added, ${summary.failed.length} failed, ${summary.waiting} waiting for a catalog record`);
+      if (summary.added.length || summary.failed.length) log('info', `Auto-add: ${summary.added.length} added, ${summary.failed.length} failed, ${summary.waiting} waiting for a catalog record, ${summary.asking} waiting for a yes or no`);
       return summary;
     } finally { scanner = null; }
   }
-  const brief = (s) => ({ added: s.added.length, failed: s.failed.length, waiting: s.waiting });
+  const brief = (s) => ({ added: s.added.length, failed: s.failed.length, waiting: s.waiting, asking: s.asking || 0 });
   const asJob = (label, fn) => (jobs.runJob ? jobs.runJob(JOB_ID, label, async () => brief(await fn())) : fn().then(brief));
 
   // Twice a day unless the Jobs page says otherwise. The times sit a little
@@ -182,7 +217,7 @@ export default async function register(api) {
   // source has one (it pages, so a long-running title is listed in full);
   // its plain search otherwise.
   async function existingFor(rule, db) {
-    const client = catalog(db);
+    const client = catalog(db, rule.libraryId);
     let volumes = null;
     if (typeof client.list === 'function') {
       try {
@@ -234,14 +269,26 @@ export default async function register(api) {
     catch (e) { res.json({ matches: [], error: String(e?.message || e) }); }
   });
 
-  route('post', '/api/autoadd/rules', (req, res) => {
-    const { rule, error } = cleanRule(req.body || {});
-    if (error) return res.status(400).json({ error });
-    const same = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
-    if (store.rules().some((r) => same(r.keyword, rule.keyword) && same(r.publisher, rule.publisher) && same(r.exclude, rule.exclude))) {
-      return res.status(409).json({ error: 'a rule like this one already exists', code: 'duplicate' });
+  // What the form sent, checked: a second rule that would catch exactly the
+  // same series is refused, and so is a library that is gone or holds
+  // something other than comics. Returns { rule } or { status, error, code }.
+  const same = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+  function checkedRule(body, exceptId = null) {
+    const { rule, error } = cleanRule(body || {});
+    if (error) return { status: 400, error };
+    if (store.rules().some((r) => r.id !== exceptId && same(r.keyword, rule.keyword) && same(r.publisher, rule.publisher) && same(r.exclude, rule.exclude))) {
+      return { status: 409, error: 'a rule like this one already exists', code: 'duplicate' };
     }
-    res.json({ rule: store.createRule(rule, req.user?.username || null) });
+    if (rule.libraryId != null && !comicLibrary(ownDb(), rule.libraryId)) {
+      return { status: 400, error: 'that library is gone, or does not hold comics', code: 'library' };
+    }
+    return { rule };
+  }
+
+  route('post', '/api/autoadd/rules', (req, res) => {
+    const c = checkedRule(req.body);
+    if (!c.rule) return res.status(c.status).json({ error: c.error, code: c.code });
+    res.json({ rule: store.createRule(c.rule, req.user?.username || null) });
   });
 
   // Change a rule: `enabled` alone flips the switch, anything else replaces
@@ -251,10 +298,10 @@ export default async function register(api) {
     if (!cur) return res.status(404).json({ error: 'no such rule' });
     const body = req.body || {};
     let patch = {};
-    if (body.keyword !== undefined) {
-      const { rule, error } = cleanRule(body);
-      if (error) return res.status(400).json({ error });
-      patch = rule;
+    if (body.keyword !== undefined || body.publisher !== undefined) {
+      const c = checkedRule(body, cur.id);
+      if (!c.rule) return res.status(c.status).json({ error: c.error, code: c.code });
+      patch = c.rule;
     }
     if (body.enabled !== undefined) patch.enabled = !!body.enabled;
     res.json({ rule: store.updateRule(cur.id, patch) });
@@ -264,10 +311,14 @@ export default async function register(api) {
     res.json({ deleted: store.deleteRule(req.params.id) });
   });
 
-  // The back catalogue: existing series this rule's name test catches.
+  // The back catalogue: existing series this rule's name test catches. A
+  // rule with no name to look for has none: a publisher's whole catalogue is
+  // not something to list.
+  const NO_NAME = { error: 'a rule without a series name has no existing series to list', code: 'noKeyword' };
   route('get', '/api/autoadd/rules/:id/existing', async (req, res) => {
     const rule = store.rule(req.params.id);
     if (!rule) return res.status(404).json({ error: 'no such rule' });
+    if (!rule.keyword) return res.status(400).json(NO_NAME);
     try { res.json({ series: await existingFor(rule, ownDb()) }); }
     catch (e) { res.json({ series: [], error: e?.rateLimited ? 'the catalog is busy right now, try again shortly' : String(e?.message || e) }); }
   });
@@ -277,6 +328,7 @@ export default async function register(api) {
   route('post', '/api/autoadd/rules/:id/existing', async (req, res) => {
     const rule = store.rule(req.params.id);
     if (!rule) return res.status(404).json({ error: 'no such rule' });
+    if (!rule.keyword) return res.status(400).json(NO_NAME);
     const ids = [...new Set((Array.isArray(req.body?.cvIds) ? req.body.cvIds : []).map(Number).filter((n) => Number.isInteger(n) && n > 0))];
     if (!ids.length || ids.length > EXISTING_BATCH) return res.status(400).json({ error: `between 1 and ${EXISTING_BATCH} series can be added at a time` });
     const db = ownDb();
@@ -287,7 +339,7 @@ export default async function register(api) {
     try { ahead = new Map((await caught([{ ...rule, enabled: true }])).matches.filter((m) => m.cvId).map((m) => [m.cvId, m])); } catch { /* the list is down: queue what the catalog has */ }
     const added = []; const failed = [];
     for (const cvId of ids) {
-      const m = { cvId, ruleId: rule.id, keyword: rule.keyword, scope: 'all', upcoming: ahead.get(cvId)?.upcoming || [], series: ahead.get(cvId)?.series || null };
+      const m = { cvId, ruleId: rule.id, keyword: rule.keyword, scope: 'all', libraryId: rule.libraryId, upcoming: ahead.get(cvId)?.upcoming || [], series: ahead.get(cvId)?.series || null };
       try {
         const r = await add(m);
         const row = db.prepare('SELECT title, publisher, year FROM series WHERE id = ?').get(r.seriesId) || {};
@@ -311,10 +363,32 @@ export default async function register(api) {
     const { matches } = await caught(store.rules());
     const m = matches.find((x) => x.key === key);
     if (!m) return res.status(404).json({ error: 'no rule catches that series right now', code: 'gone' });
-    if (m.state === 'new') store.record('skipped', m, null);
+    if (m.state === 'new' || m.state === 'ask') store.record('skipped', m, null);
     else if (m.state === 'waiting') store.skipPending(m, true);
     else return res.status(409).json({ error: 'that series is not waiting to be added', code: 'gone' });
     res.json({ skipped: true });
+  });
+
+  // "Yes, this one", for a series whose rule asks first. One the catalog
+  // already has a record for is added on the spot; one still waiting for its
+  // record is added when that arrives.
+  route('post', '/api/autoadd/approve', async (req, res) => {
+    const key = String(req.body?.key || '');
+    const { matches } = await caught(store.rules());
+    const m = matches.find((x) => x.key === key);
+    if (!m) return res.status(404).json({ error: 'no rule catches that series right now', code: 'gone' });
+    if (m.state === 'waiting' && m.needsOk) { store.approvePending(m); return res.json({ approved: true }); }
+    if (m.state !== 'ask') return res.status(409).json({ error: 'that series is not waiting for an answer', code: 'gone' });
+    try {
+      const r = await adder(ownDb(), kick(req))(m);
+      store.record('added', m, r.seriesId);
+      store.unpend(m.nameKey);
+      log('info', `Added ${m.series} (rule "${m.keyword}", approved on the page)${r.queued ? `, ${r.queued} released issue${r.queued === 1 ? '' : 's'} queued` : ''}`);
+      res.json({ added: { cvId: m.cvId, seriesId: r.seriesId, queued: r.queued } });
+    } catch (e) {
+      log('warn', `Could not add ${m.series}: ${e?.message || e}`);
+      res.status(e?.rateLimited ? 429 : 500).json({ error: e?.rateLimited ? 'the catalog is busy right now, try again shortly' : String(e?.message || e) });
+    }
   });
 
   // Take a series off the record: a skipped one is caught again, and one that

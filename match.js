@@ -33,13 +33,17 @@ export function hasPhrase(haystack, needle) {
 const excludesOf = (v) => (Array.isArray(v) ? v : String(v ?? '').split(','))
   .map((x) => String(x).trim()).filter(Boolean);
 
-// Validate what the rule form sent. Returns { rule } or { error }.
+// Validate what the rule form sent. Returns { rule } or { error }. A rule
+// needs a name to look for, or failing that a publisher: with no name it
+// catches every series that publisher puts on the list.
 export function cleanRule(input = {}) {
   const keyword = String(input.keyword ?? '').replace(/\s+/g, ' ').trim();
-  if (normalize(keyword).length < 2) return { error: 'a keyword of at least two characters is required' };
-  if (keyword.length > MAX_TEXT) return { error: 'the keyword is too long' };
   const publisher = String(input.publisher ?? '').replace(/\s+/g, ' ').trim();
+  if (keyword && normalize(keyword).length < 2) return { error: 'the name to look for needs at least two characters' };
+  if (!keyword && normalize(publisher).length < 2) return { error: 'a name to look for, or a publisher, of at least two characters is required' };
+  if (keyword.length > MAX_TEXT) return { error: 'the keyword is too long' };
   if (publisher.length > MAX_TEXT) return { error: 'the publisher is too long' };
+  const library = Number(input.libraryId);
   const exclude = excludesOf(input.exclude).filter((x) => normalize(x));
   if (exclude.length > MAX_EXCLUDES || exclude.some((x) => x.length > MAX_TEXT)) return { error: 'too many words to leave out' };
   return {
@@ -49,16 +53,24 @@ export function cleanRule(input = {}) {
       exclude: exclude.join(', '),
       skipCollected: input.skipCollected === undefined ? true : !!input.skipCollected,
       newOnly: !!input.newOnly,
+      ask: !!input.ask,
       scope: SCOPES.includes(input.scope) ? input.scope : 'all',
+      libraryId: Number.isInteger(library) && library > 0 ? library : null,
     },
   };
 }
+
+// What a rule is called where there is only room for a word or two: the name
+// it looks for, or its publisher when it has no name.
+export const ruleLabel = (rule) => rule?.keyword || rule?.publisher || '';
 
 // Does this rule catch that release-list entry? (Whether the series is new
 // is a question about the series, not one entry: see collect.)
 export function ruleMatches(rule, rel) {
   const name = normalize(rel?.series);
-  if (!name || !hasPhrase(name, normalize(rule.keyword))) return false;
+  if (!name) return false;
+  const keyword = normalize(rule.keyword);
+  if (keyword ? !hasPhrase(name, keyword) : !normalize(rule.publisher)) return false;
   if (excludesOf(rule.exclude).some((x) => hasPhrase(name, normalize(x)))) return false;
   if (rule.publisher && !normalize(rel.publisher).includes(normalize(rule.publisher))) return false;
   if (rule.skipCollected && isCollected(rel.type)) return false;
@@ -128,7 +140,7 @@ export function collect(rules, weeks, { pending = new Set() } = {}) {
     const rule = row.catching.find((r) => !r.newOnly || row.first || waiting);
     if (!rule) continue;
     const { catching, ...rest } = row;
-    out.push({ ...rest, ruleId: rule.id ?? null, keyword: rule.keyword, scope: rule.scope || 'all' });
+    out.push({ ...rest, ruleId: rule.id ?? null, keyword: ruleLabel(rule), scope: rule.scope || 'all', ask: !!rule.ask, libraryId: rule.libraryId ?? null });
   }
   return out.sort((a, b) =>
     String(a.shipdate || '9999').localeCompare(String(b.shipdate || '9999')) || a.series.localeCompare(b.series));
@@ -139,20 +151,25 @@ export function collect(rules, weeks, { pending = new Set() } = {}) {
 //   skipped  someone said "not this one"
 //   library  already in the library, however it got there
 //   removed  a rule added it before and it was deleted since; never added twice
+//   ask      its rule asks first, and nobody has said yes yet
 //   new      will be added on the next run
+// `needsOk` marks a series that is held until someone says yes: every `ask`
+// one, and a `waiting` one whose rule asks first.
 // `tracked` maps catalog id to library series id; `handled` maps catalog id to
 // the plugin's own record of it ({ status: 'added' | 'skipped' }); `skippedKeys`
-// holds the name keys of series skipped while they were still waiting.
-export function classify(matches, { tracked = new Map(), handled = new Map(), skippedKeys = new Set() } = {}) {
+// and `approvedKeys` hold the name keys of series someone said no or yes to.
+export function classify(matches, { tracked = new Map(), handled = new Map(), skippedKeys = new Set(), approvedKeys = new Set() } = {}) {
   return matches.map((m) => {
     const h = m.cvId ? handled.get(m.cvId) : null;
     const seriesId = m.cvId ? tracked.get(m.cvId) ?? null : null;
+    const held = !!m.ask && !approvedKeys.has(m.nameKey);
     let state = 'new';
     if (h?.status === 'skipped' || skippedKeys.has(m.nameKey)) state = 'skipped';
     else if (!m.cvId) state = 'waiting';
     else if (seriesId != null) state = 'library';
     else if (h?.status === 'added') state = 'removed';
-    return { ...m, state, seriesId };
+    else if (held) state = 'ask';
+    return { ...m, state, seriesId, needsOk: held && (state === 'ask' || state === 'waiting') };
   });
 }
 

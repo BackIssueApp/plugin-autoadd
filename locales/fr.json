@@ -1,7 +1,8 @@
 {
   "error": {
     "duplicate": "Une règle identique existe déjà.",
-    "gone": "Cette série n’est plus en attente d’ajout."
+    "gone": "Cette série n’est plus en attente d’ajout.",
+    "library": "Cette bibliothèque n’existe plus."
   },
   "match": {
     "shipped": "Le n° {number} est sorti le {date}",
@@ -13,22 +14,49 @@
   "state": {
     "new": "Sera ajoutée",
     "waiting": "En attente d’informations",
+    "ask": "En attente de votre accord",
     "library": "Dans votre bibliothèque",
     "skipped": "Ignorée",
     "removed": "Retirée de votre bibliothèque"
   },
+  "form": {
+    "libraryDefault": "Bibliothèque par défaut",
+    "editing": "Modification de la règle « {keyword} »",
+    "saveChanges": "Enregistrer les modifications",
+    "save": "Enregistrer la règle",
+    "updated": "Règle modifiée",
+    "saved": "Règle enregistrée",
+    "keyword": "Le nom de la série contient",
+    "keywordHint": "p. ex. Star Trek",
+    "keywordEmpty": "Laissez ce champ vide et indiquez un éditeur pour retenir toutes les séries à venir de cet éditeur.",
+    "publisher": "Éditeur (facultatif)",
+    "exclude": "Écarter les noms contenant (facultatif)",
+    "excludeHint": "Mots séparés par des virgules",
+    "scope": "Télécharger",
+    "scopeAll": "Tous les numéros de la série",
+    "scopeNew": "Seulement le prochain numéro et les suivants",
+    "library": "Ajouter à",
+    "newOnly": "Nouvelles séries seulement (écarter les séries qui ont déjà dépassé leur premier numéro)",
+    "ask": "Demander avant d’ajouter (chaque série attend votre accord sur cette page)",
+    "collected": "Numéros individuels seulement (sans albums brochés, reliés ni intégrales)",
+    "cancel": "Annuler"
+  },
   "rule": {
+    "everything": "Tout ce que publie {publisher}",
     "publisher": "Éditeur : {publisher}",
     "exclude": "Sans : {words}",
     "newOnly": "Nouvelles séries seulement",
+    "ask": "Demande avant d’ajouter",
     "noCollected": "Numéros individuels seulement",
     "withCollected": "Recueils compris",
     "scopeNew": "À partir du prochain numéro",
-    "scopeAll": "Tous les numéros"
+    "scopeAll": "Tous les numéros",
+    "library": "Bibliothèque : {library}"
   },
   "rules": {
     "empty": "Aucune règle pour l’instant. Écrivez-en une ci-dessous.",
     "toggle": "Activer ou désactiver cette règle",
+    "edit": "Modifier",
     "delete": "Supprimer",
     "deleteConfirm": "Supprimer la règle « {keyword} » ? Les séries qu’elle a déjà ajoutées restent dans votre bibliothèque.",
     "deleted": "Règle supprimée",
@@ -87,30 +115,24 @@
     "count": {
       "one": "Cette règle retient {count} série dans les {weeks} prochaines semaines :",
       "other": "Cette règle retient {count} séries dans les {weeks} prochaines semaines :"
+    },
+    "more": {
+      "one": "et {count} autre",
+      "other": "et {count} autres"
     }
-  },
-  "form": {
-    "saved": "Règle enregistrée",
-    "keyword": "Le nom de la série contient",
-    "keywordHint": "p. ex. Star Trek",
-    "publisher": "Éditeur (facultatif)",
-    "exclude": "Écarter les noms contenant (facultatif)",
-    "excludeHint": "Mots séparés par des virgules",
-    "scope": "Télécharger",
-    "scopeAll": "Tous les numéros de la série",
-    "scopeNew": "Seulement le prochain numéro et les suivants",
-    "newOnly": "Nouvelles séries seulement (écarter les séries qui ont déjà dépassé leur premier numéro)",
-    "collected": "Numéros individuels seulement (sans albums brochés, reliés ni intégrales)",
-    "save": "Enregistrer la règle"
   },
   "matches": {
     "loading": "Lecture de la liste des sorties…",
     "empty": "Rien ne correspond encore à vos règles dans les {weeks} prochaines semaines.",
     "noRules": "Les séries retenues par vos règles apparaissent ici.",
     "skip": "Ignorer",
+    "add": "Ajouter",
+    "addWhenReady": "Ajouter dès que possible",
     "allow": "Autoriser",
     "addAgain": "Ajouter à nouveau",
     "open": "Ouvrir",
+    "added": "{title} a été ajoutée",
+    "approved": "{title} sera ajoutée dès que ses informations seront disponibles.",
     "heading": "Retenues dans les semaines à venir"
   },
   "history": {
@@ -158,6 +180,18 @@
       },
       "autoaddMore": {
         "title": "{count} autres séries ajoutées",
+        "body": "La liste complète se trouve dans Ajout automatique."
+      },
+      "autoaddWaitingAsk": {
+        "title": "À venir : {title}",
+        "body": "Elle sort le {date} et correspond à votre règle « {keyword} ». Indiquez sur la page Ajout automatique s’il faut l’ajouter."
+      },
+      "autoaddAsk": {
+        "title": "Votre accord est attendu : {title}",
+        "body": "Elle correspond à votre règle « {keyword} ». Ajoutez-la ou ignorez-la sur la page Ajout automatique."
+      },
+      "autoaddAskMore": {
+        "title": "{count} autres séries attendent votre accord",
         "body": "La liste complète se trouve dans Ajout automatique."
       }
     }

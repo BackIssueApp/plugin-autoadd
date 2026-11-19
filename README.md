@@ -4,7 +4,8 @@ Keyword rules that add upcoming series to your BackIssue library for you. Write
 a rule such as **Star Trek** once. From then on the plugin watches the release
 list, which reaches about eight weeks ahead, tells you as soon as a series with
 that phrase in its name turns up, and adds it to your library for you. You
-never have to know the series exists.
+never have to know the series exists. A rule can also ask you first, so
+nothing is added without your say.
 
 ## Install
 
@@ -17,23 +18,35 @@ Open **Auto-add** in the sidebar and write a rule:
 
 - **Series name contains**: the phrase to look for. It matches whole words and
   ignores case, accents and punctuation, so `star trek` catches
-  *Star Trek: Zero Point* but not *Stargate*.
-- **Publisher** (optional): only series from a publisher whose name contains
-  this.
+  *Star Trek: Zero Point* but not *Stargate*. Leave it empty and name a
+  publisher to catch every series that publisher has coming.
+- **Publisher** (optional when there is a name): only series from a publisher
+  whose name contains this.
 - **Leave out names containing** (optional): words that rule a series out,
   separated by commas.
 - **Download**: every issue of the series, or only the upcoming issue and the
   ones after it.
+- **Add to**: the library the rule's series go to. The field appears when you
+  have more than one comics library; otherwise series go to your default
+  library.
 - **New series only**: leave out series that are already past their first
   issue. A series counts as new when its first issue is on the release list or
   shipped in the last four weeks. Turn this on for a broad rule, so that a
   phrase like `batman` does not pull in every long-running title and its back
   issues.
+- **Ask before adding**: the rule adds nothing on its own. Each series it
+  catches waits on the Auto-add page for you to press **Add** or **Skip**, and
+  a notification tells you it is there. A good fit for a publisher rule or
+  any other rule you expect to catch more than you want.
 - **Single issues only**: on by default, so trade paperbacks, hardcovers and
   omnibuses are not added as series of their own.
 
 While you type, the page shows what the rule would catch in the weeks ahead,
 so you can see its reach before you save it.
+
+Press **Edit** on a rule to change it. The form fills with the rule as it is,
+shows what the changed rule would catch, and **Save changes** replaces it.
+Series the rule already added are not touched.
 
 ## What happens next
 
@@ -49,6 +62,11 @@ after it. For each series a rule catches that is not in your library yet:
   details**. It is added on the first check after its record arrives, which is
   usually around the week its first issue ships. The plugin keeps following it
   for four weeks after it ships, so a late record is not missed.
+- **A series caught by a rule that asks first** shows as **Needs your OK**
+  once the catalog knows it. **Add** puts it in your library on the spot. While
+  it is still waiting for details you can press **Add when ready**, and it is
+  added on the first check after its record arrives. A series you never answer
+  stays on the page until four weeks after its issue ships.
 
 Once a series is added:
 
@@ -75,6 +93,8 @@ is added on its own: you choose each time.
 - **Caught in the weeks ahead** lists every series your rules catch and what
   will happen to it. Press **Skip** on one you do not want. That works both
   for a series about to be added and for one still waiting for details.
+- Turn on **Ask before adding** for a rule you want the last word on. It then
+  only proposes series, and you add the ones you want.
 - A series is added once. If you delete it from your library later, it does not
   come back. **Add again** on the page lifts that.
 - Deleting a rule leaves the series it already added in your library.
@@ -89,8 +109,14 @@ is added on its own: you choose each time.
   brand-new series that is close to release, not eight weeks before. You are
   told about the series when it is caught, and nothing is lost by the wait:
   issues that shipped in the meantime are queued when the series is added.
-- A rule matches the series name only. A tie-in that does not carry the phrase
-  in its name is not caught.
+- The release list knows a series' publisher only once the catalog has a
+  record for it. A rule that names a publisher therefore catches a brand-new
+  series when its record arrives, without the early **Coming up** notice. A
+  rule with a name and no publisher hears about it weeks sooner.
+- A rule with a name matches the series name only. A tie-in that does not
+  carry the phrase in its name is not caught.
+- **Existing series** needs a name to search for, so a rule with only a
+  publisher does not offer it.
 - The list covers the main publishers. A small-press title that never appears
   on it, or never gets a catalog record, cannot be added.
 

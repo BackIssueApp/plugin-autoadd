@@ -29,6 +29,16 @@ by the maintainers when changes merge, so concurrent PRs don't conflict here.
 - **Existing series** on a rule searches the catalog for series already
   published that the rule matches and that are not in the library, to tick and
   add by hand.
+- **Ask before adding** on a rule holds every series it catches for a yes or
+  no. A held series shows as **Needs your OK** with **Add** and **Skip**, a
+  notification says it is waiting, and one still waiting for its details can
+  be approved ahead of time with **Add when ready**.
+- A rule can go by publisher alone: leave the series name empty and it catches
+  every series that publisher has coming.
+- **Edit** on a rule loads it into the form to change it, with the same look
+  at what the changed rule would catch.
+- **Add to** picks the library a rule's series go to, when there is more than
+  one comics library.
 - **Caught in the weeks ahead** lists each caught series and what will happen
   to it, with **Skip** to keep one out, whether it is about to be added or
   still waiting. A series is added once: deleting it later does not bring it

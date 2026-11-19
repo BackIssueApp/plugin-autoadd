@@ -1,7 +1,8 @@
 {
   "error": {
     "duplicate": "Já existe uma regra igual.",
-    "gone": "Essa série já não está à espera de ser adicionada."
+    "gone": "Essa série já não está à espera de ser adicionada.",
+    "library": "Essa biblioteca já não existe."
   },
   "match": {
     "shipped": "O n.º {number} saiu a {date}",
@@ -13,22 +14,49 @@
   "state": {
     "new": "Será adicionada",
     "waiting": "A aguardar dados",
+    "ask": "Precisa da sua aprovação",
     "library": "Na sua biblioteca",
     "skipped": "Ignorada",
     "removed": "Removida da sua biblioteca"
   },
+  "form": {
+    "libraryDefault": "Biblioteca predefinida",
+    "editing": "A alterar a regra «{keyword}»",
+    "saveChanges": "Guardar alterações",
+    "save": "Guardar regra",
+    "updated": "Regra atualizada",
+    "saved": "Regra guardada",
+    "keyword": "O nome da série contém",
+    "keywordHint": "p. ex. Star Trek",
+    "keywordEmpty": "Deixe este campo vazio e indique uma editora para apanhar todas as séries que essa editora tem para sair.",
+    "publisher": "Editora (opcional)",
+    "exclude": "Deixar de fora nomes que contenham (opcional)",
+    "excludeHint": "Palavras separadas por vírgulas",
+    "scope": "Transferir",
+    "scopeAll": "Todas as edições da série",
+    "scopeNew": "Só a próxima edição e as seguintes",
+    "library": "Adicionar a",
+    "newOnly": "Só séries novas (deixar de fora as que já passaram da primeira edição)",
+    "ask": "Perguntar antes de adicionar (cada série aguarda a sua aprovação nesta página)",
+    "collected": "Só edições individuais (sem brochuras, capas duras e omnibus)",
+    "cancel": "Cancelar"
+  },
   "rule": {
+    "everything": "Tudo de {publisher}",
     "publisher": "Editora: {publisher}",
     "exclude": "Sem: {words}",
     "newOnly": "Só séries novas",
+    "ask": "Pergunta antes de adicionar",
     "noCollected": "Só edições individuais",
     "withCollected": "Coletâneas também",
     "scopeNew": "A partir da próxima edição",
-    "scopeAll": "Todas as edições"
+    "scopeAll": "Todas as edições",
+    "library": "Biblioteca: {library}"
   },
   "rules": {
     "empty": "Ainda não há regras. Escreva uma abaixo.",
     "toggle": "Ligar ou desligar esta regra",
+    "edit": "Editar",
     "delete": "Eliminar",
     "deleteConfirm": "Eliminar a regra «{keyword}»? As séries que ela já adicionou ficam na sua biblioteca.",
     "deleted": "Regra eliminada",
@@ -87,30 +115,24 @@
     "count": {
       "one": "Esta regra apanha {count} série nas próximas {weeks} semanas:",
       "other": "Esta regra apanha {count} séries nas próximas {weeks} semanas:"
+    },
+    "more": {
+      "one": "e mais {count}",
+      "other": "e mais {count}"
     }
-  },
-  "form": {
-    "saved": "Regra guardada",
-    "keyword": "O nome da série contém",
-    "keywordHint": "p. ex. Star Trek",
-    "publisher": "Editora (opcional)",
-    "exclude": "Deixar de fora nomes que contenham (opcional)",
-    "excludeHint": "Palavras separadas por vírgulas",
-    "scope": "Transferir",
-    "scopeAll": "Todas as edições da série",
-    "scopeNew": "Só a próxima edição e as seguintes",
-    "newOnly": "Só séries novas (deixar de fora as que já passaram da primeira edição)",
-    "collected": "Só edições individuais (sem brochuras, capas duras e omnibus)",
-    "save": "Guardar regra"
   },
   "matches": {
     "loading": "A ler a lista de lançamentos…",
     "empty": "Ainda nada corresponde às suas regras nas próximas {weeks} semanas.",
     "noRules": "As séries apanhadas pelas suas regras aparecem aqui.",
     "skip": "Ignorar",
+    "add": "Adicionar",
+    "addWhenReady": "Adicionar quando possível",
     "allow": "Permitir",
     "addAgain": "Adicionar de novo",
     "open": "Abrir",
+    "added": "{title} adicionada",
+    "approved": "{title} será adicionada assim que os seus dados estiverem disponíveis.",
     "heading": "Apanhadas nas próximas semanas"
   },
   "history": {
@@ -158,6 +180,18 @@
       },
       "autoaddMore": {
         "title": "Mais {count} séries adicionadas",
+        "body": "A lista completa está em Adição automática."
+      },
+      "autoaddWaitingAsk": {
+        "title": "Em breve: {title}",
+        "body": "Sai a {date} e corresponde à sua regra «{keyword}». Indique na página Adição automática se a quer adicionar."
+      },
+      "autoaddAsk": {
+        "title": "Precisa da sua aprovação: {title}",
+        "body": "Corresponde à sua regra «{keyword}». Adicione-a ou ignore-a na página Adição automática."
+      },
+      "autoaddAskMore": {
+        "title": "Mais {count} séries precisam da sua aprovação",
         "body": "A lista completa está em Adição automática."
       }
     }

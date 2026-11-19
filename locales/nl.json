@@ -1,7 +1,8 @@
 {
   "error": {
     "duplicate": "Zo’n regel bestaat al.",
-    "gone": "Die serie wacht niet meer op toevoeging."
+    "gone": "Die serie wacht niet meer op toevoeging.",
+    "library": "Die bibliotheek bestaat niet meer."
   },
   "match": {
     "shipped": "Nr. {number} verscheen op {date}",
@@ -13,22 +14,49 @@
   "state": {
     "new": "Wordt toegevoegd",
     "waiting": "Wacht op gegevens",
+    "ask": "Wacht op je akkoord",
     "library": "In je bibliotheek",
     "skipped": "Overgeslagen",
     "removed": "Uit je bibliotheek verwijderd"
   },
+  "form": {
+    "libraryDefault": "Standaardbibliotheek",
+    "editing": "Regel ‘{keyword}’ wordt gewijzigd",
+    "saveChanges": "Wijzigingen opslaan",
+    "save": "Regel opslaan",
+    "updated": "Regel bijgewerkt",
+    "saved": "Regel opgeslagen",
+    "keyword": "Serienaam bevat",
+    "keywordHint": "bijv. Star Trek",
+    "keywordEmpty": "Laat dit veld leeg en vul een uitgever in om elke komende serie van die uitgever te vangen.",
+    "publisher": "Uitgever (optioneel)",
+    "exclude": "Namen weglaten die dit bevatten (optioneel)",
+    "excludeHint": "Woorden, gescheiden door komma’s",
+    "scope": "Downloaden",
+    "scopeAll": "Elk nummer van de serie",
+    "scopeNew": "Alleen het volgende nummer en later",
+    "library": "Toevoegen aan",
+    "newOnly": "Alleen nieuwe series (series die al voorbij hun eerste nummer zijn weglaten)",
+    "ask": "Eerst vragen (elke serie wacht op deze pagina op je akkoord)",
+    "collected": "Alleen losse nummers (geen paperbacks, hardcovers en omnibussen)",
+    "cancel": "Annuleren"
+  },
   "rule": {
+    "everything": "Alles van {publisher}",
     "publisher": "Uitgever: {publisher}",
     "exclude": "Zonder: {words}",
     "newOnly": "Alleen nieuwe series",
+    "ask": "Vraagt eerst",
     "noCollected": "Alleen losse nummers",
     "withCollected": "Ook verzamelbundels",
     "scopeNew": "Vanaf het volgende nummer",
-    "scopeAll": "Elk nummer"
+    "scopeAll": "Elk nummer",
+    "library": "Bibliotheek: {library}"
   },
   "rules": {
     "empty": "Nog geen regels. Schrijf er hieronder een.",
     "toggle": "Deze regel aan- of uitzetten",
+    "edit": "Bewerken",
     "delete": "Verwijderen",
     "deleteConfirm": "De regel ‘{keyword}’ verwijderen? Series die de regel al heeft toegevoegd blijven in je bibliotheek.",
     "deleted": "Regel verwijderd",
@@ -87,30 +115,24 @@
     "count": {
       "one": "Deze regel vangt {count} serie in de komende {weeks} weken:",
       "other": "Deze regel vangt {count} series in de komende {weeks} weken:"
+    },
+    "more": {
+      "one": "en nog {count}",
+      "other": "en nog {count}"
     }
-  },
-  "form": {
-    "saved": "Regel opgeslagen",
-    "keyword": "Serienaam bevat",
-    "keywordHint": "bijv. Star Trek",
-    "publisher": "Uitgever (optioneel)",
-    "exclude": "Namen weglaten die dit bevatten (optioneel)",
-    "excludeHint": "Woorden, gescheiden door komma’s",
-    "scope": "Downloaden",
-    "scopeAll": "Elk nummer van de serie",
-    "scopeNew": "Alleen het volgende nummer en later",
-    "newOnly": "Alleen nieuwe series (series die al voorbij hun eerste nummer zijn weglaten)",
-    "collected": "Alleen losse nummers (geen paperbacks, hardcovers en omnibussen)",
-    "save": "Regel opslaan"
   },
   "matches": {
     "loading": "De lijst met nieuwe uitgaven wordt gelezen…",
     "empty": "In de komende {weeks} weken past er nog niets bij je regels.",
     "noRules": "Series die je regels vangen, verschijnen hier.",
     "skip": "Overslaan",
+    "add": "Toevoegen",
+    "addWhenReady": "Toevoegen zodra het kan",
     "allow": "Toestaan",
     "addAgain": "Opnieuw toevoegen",
     "open": "Openen",
+    "added": "{title} toegevoegd",
+    "approved": "{title} wordt toegevoegd zodra de gegevens beschikbaar zijn.",
     "heading": "Gevangen in de komende weken"
   },
   "history": {
@@ -158,6 +180,18 @@
       },
       "autoaddMore": {
         "title": "Nog {count} series toegevoegd",
+        "body": "De volledige lijst staat bij Automatisch toevoegen."
+      },
+      "autoaddWaitingAsk": {
+        "title": "Binnenkort: {title}",
+        "body": "De serie verschijnt op {date} en past bij je regel ‘{keyword}’. Geef op de pagina Automatisch toevoegen aan of je haar wilt toevoegen."
+      },
+      "autoaddAsk": {
+        "title": "Wacht op je akkoord: {title}",
+        "body": "De serie past bij je regel ‘{keyword}’. Voeg haar toe of sla haar over op de pagina Automatisch toevoegen."
+      },
+      "autoaddAskMore": {
+        "title": "Nog {count} series wachten op je akkoord",
         "body": "De volledige lijst staat bij Automatisch toevoegen."
       }
     }

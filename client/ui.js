@@ -1,6 +1,6 @@
 // Auto-add client, injected via window.BackIssue. Adds an "Auto-add" entry to
 // the sidebar that opens one page: the rules (each with a look at the series
-// already published that it catches), a form for a new rule with a live look
+// already published that it catches), a form to write a rule or change one, with a live look
 // at what it would catch, the series the rules catch in the weeks ahead, and
 // the record of what they have added. Shown only to accounts that may manage
 // the rules; the server enforces that regardless.
@@ -29,15 +29,19 @@
     const CODE_TEXT = {
       duplicate: () => tr('error.duplicate', 'A rule like this one already exists.'),
       gone: () => tr('error.gone', 'That series is no longer waiting to be added.'),
+      library: () => tr('error.library', 'That library no longer exists.'),
     };
     const say = (err) => toast((err?.code && CODE_TEXT[err.code]?.()) || String(err?.message || err), 'error');
     const icon = (name, fallback) => (api.icon && api.icon(name)) || fallback;
 
     const ADD_CHUNK = 5;       // back-catalogue series added per request
     const CONFIRM_OVER = 10;   // ask before adding more than this many at once
+    const PREVIEW_MAX = 25;    // series a preview lists before it just counts the rest
 
     let overlay = null;
     let state = { rules: [], history: [], lastRun: null, weeksAhead: 8 };
+    let libraries = [];      // the comic libraries this account can see: { id, name }
+    let editing = null;      // id of the rule loaded in the form, when changing one
     let matches = null;      // null = still loading
     let matchesError = null;
     let previewTimer = null;
@@ -67,6 +71,7 @@
     const STATE_LABEL = {
       new: () => tr('state.new', 'Will be added'),
       waiting: () => tr('state.waiting', 'Waiting for details'),
+      ask: () => tr('state.ask', 'Needs your OK'),
       library: () => tr('state.library', 'In your library'),
       skipped: () => tr('state.skipped', 'Skipped'),
       removed: () => tr('state.removed', 'Removed from your library'),
@@ -88,15 +93,41 @@
       paintMatches();
     }
     const reload = () => Promise.all([loadState(), loadMatches()]).catch(say);
+    // Where a rule may send its series. Asked of the app, which only lists the
+    // libraries this account can see; the field stays hidden with fewer than two.
+    async function loadLibraries() {
+      let r = null;
+      try { r = await api.get('/api/libraries'); } catch { /* the field stays hidden */ }
+      libraries = (r?.libraries || []).filter((l) => l.type === 'comic').map((l) => ({ id: l.id, name: l.name }));
+      paintLibraryField();
+      paintRules();
+    }
+    function paintLibraryField() {
+      const field = overlay?.querySelector('.aa-field--library');
+      if (!field) return;
+      const sel = field.querySelector('select');
+      // A rule being changed keeps its library when the list arrives late.
+      const keep = sel.value || String((editing != null && state.rules.find((r) => r.id === editing)?.libraryId) || '');
+      sel.innerHTML = '<option value="">' + esc(tr('form.libraryDefault', 'Default library')) + '</option>' +
+        libraries.map((l) => '<option value="' + l.id + '">' + esc(l.name) + '</option>').join('');
+      sel.value = libraries.some((l) => String(l.id) === keep) ? keep : '';
+      field.hidden = libraries.length < 2;
+    }
 
     // ---- rules ----
+    // A rule goes by the name it looks for, or by its publisher when it has none.
+    const labelOf = (r) => r?.keyword || r?.publisher || '';
+    const titleOf = (r) => (r.keyword ? r.keyword : tr('rule.everything', 'Everything from {publisher}', { publisher: r.publisher }));
     function ruleDetails(r) {
       const bits = [];
-      if (r.publisher) bits.push(tr('rule.publisher', 'Publisher: {publisher}', { publisher: r.publisher }));
+      if (r.publisher && r.keyword) bits.push(tr('rule.publisher', 'Publisher: {publisher}', { publisher: r.publisher }));
       if (r.exclude) bits.push(tr('rule.exclude', 'Leaves out: {words}', { words: r.exclude }));
       if (r.newOnly) bits.push(tr('rule.newOnly', 'New series only'));
+      if (r.ask) bits.push(tr('rule.ask', 'Asks before adding'));
       bits.push(r.skipCollected ? tr('rule.noCollected', 'Single issues only') : tr('rule.withCollected', 'Collected editions too'));
       bits.push(r.scope === 'new' ? tr('rule.scopeNew', 'From the upcoming issue on') : tr('rule.scopeAll', 'Every issue'));
+      const lib = r.libraryId != null ? libraries.find((l) => l.id === r.libraryId) : null;
+      if (lib) bits.push(tr('rule.library', 'Library: {library}', { library: lib.name }));
       return bits.map(esc).join(' · ');
     }
     function paintRules() {
@@ -108,10 +139,12 @@
       }
       el.innerHTML = state.rules.map((r) =>
         '<div class="aa-rule" data-id="' + r.id + '">' +
-          '<div class="aa-row' + (r.enabled ? '' : ' aa-row--off') + '">' +
+          '<div class="aa-row' + (r.enabled ? '' : ' aa-row--off') + (editing === r.id ? ' aa-row--editing' : '') + '">' +
             '<label class="switch switch--sm" title="' + esc(tr('rules.toggle', 'Turn this rule on or off')) + '"><input type="checkbox" class="aa-rule__on"' + (r.enabled ? ' checked' : '') + '><span class="switch__track"></span></label>' +
-            '<div class="aa-row__main"><div class="aa-row__title">' + esc(r.keyword) + '</div><div class="aa-row__meta">' + ruleDetails(r) + '</div></div>' +
-            '<button class="btn btn--ghost btn--sm aa-rule__existing" title="' + esc(tr('existing.title', 'Series already published that this rule catches')) + '">' + esc(finders.has(r.id) ? tr('existing.hide', 'Hide') : tr('existing.button', 'Existing series')) + '</button>' +
+            '<div class="aa-row__main"><div class="aa-row__title">' + esc(titleOf(r)) + '</div><div class="aa-row__meta">' + ruleDetails(r) + '</div></div>' +
+            // A rule with no name to look for has no back catalogue to list.
+            (r.keyword ? '<button class="btn btn--ghost btn--sm aa-rule__existing" title="' + esc(tr('existing.title', 'Series already published that this rule catches')) + '">' + esc(finders.has(r.id) ? tr('existing.hide', 'Hide') : tr('existing.button', 'Existing series')) + '</button>' : '') +
+            '<button class="btn btn--ghost btn--sm aa-rule__edit">' + esc(tr('rules.edit', 'Edit')) + '</button>' +
             '<button class="btn btn--ghost btn--sm aa-rule__del">' + esc(tr('rules.delete', 'Delete')) + '</button>' +
           '</div>' +
           '<div class="aa-existing"' + (finders.has(r.id) ? '' : ' hidden') + '></div>' +
@@ -124,11 +157,18 @@
         };
         box.querySelector('.aa-rule__del').onclick = async () => {
           const rule = state.rules.find((x) => x.id === id);
-          if (!window.confirm(tr('rules.deleteConfirm', 'Delete the rule “{keyword}”? Series it already added stay in your library.', { keyword: rule?.keyword || '' }))) return;
-          try { await post('/api/autoadd/rules/' + id + '/delete'); finders.delete(id); toast(tr('rules.deleted', 'Rule deleted')); await reload(); }
-          catch (err) { say(err); }
+          if (!window.confirm(tr('rules.deleteConfirm', 'Delete the rule “{keyword}”? Series it already added stay in your library.', { keyword: labelOf(rule) }))) return;
+          try {
+            await post('/api/autoadd/rules/' + id + '/delete');
+            finders.delete(id);
+            if (editing === id) stopEdit();
+            toast(tr('rules.deleted', 'Rule deleted'));
+            await reload();
+          } catch (err) { say(err); }
         };
-        box.querySelector('.aa-rule__existing').onclick = () => {
+        box.querySelector('.aa-rule__edit').onclick = () => startEdit(id);
+        const existing = box.querySelector('.aa-rule__existing');
+        if (existing) existing.onclick = () => {
           if (finders.has(id)) { finders.delete(id); paintRules(); } else openFinder(id);
         };
         if (finders.has(id)) paintFinder(id);
@@ -216,7 +256,7 @@
       await reload();
     }
 
-    // ---- new rule + preview ----
+    // ---- the rule form (a new rule, or one being changed) + preview ----
     function formRule() {
       const q = (s) => overlay.querySelector(s);
       return {
@@ -225,15 +265,57 @@
         exclude: q('.aa-f__exclude').value,
         skipCollected: q('.aa-f__collected').checked,
         newOnly: q('.aa-f__newonly').checked,
+        ask: q('.aa-f__ask').checked,
         scope: q('.aa-f__scope').value,
+        libraryId: Number(q('.aa-f__library').value) || null,
       };
+    }
+    // A rule needs a name to look for, or a publisher when the name is empty.
+    const usable = (rule) => {
+      const name = rule.keyword.trim();
+      return name ? name.length >= 2 : rule.publisher.trim().length >= 2;
+    };
+    // The form's wording follows what it is doing: writing a rule or changing one.
+    function paintFormMode() {
+      if (!overlay) return;
+      const rule = editing != null ? state.rules.find((r) => r.id === editing) : null;
+      const note = overlay.querySelector('.aa__editing');
+      note.hidden = !rule;
+      note.textContent = rule ? tr('form.editing', 'Changing the rule “{keyword}”', { keyword: labelOf(rule) }) : '';
+      overlay.querySelector('.aa-f__save').textContent = rule ? tr('form.saveChanges', 'Save changes') : tr('form.save', 'Save rule');
+      overlay.querySelector('.aa-f__cancel').hidden = !rule;
+    }
+    function startEdit(id) {
+      const rule = state.rules.find((r) => r.id === id);
+      if (!rule) return;
+      editing = id;
+      const q = (s) => overlay.querySelector(s);
+      q('.aa-f__keyword').value = rule.keyword || '';
+      q('.aa-f__publisher').value = rule.publisher || '';
+      q('.aa-f__exclude').value = rule.exclude || '';
+      q('.aa-f__collected').checked = !!rule.skipCollected;
+      q('.aa-f__newonly').checked = !!rule.newOnly;
+      q('.aa-f__ask').checked = !!rule.ask;
+      q('.aa-f__scope').value = rule.scope === 'new' ? 'new' : 'all';
+      const lib = rule.libraryId != null && libraries.some((l) => l.id === rule.libraryId) ? String(rule.libraryId) : '';
+      q('.aa-f__library').value = lib;
+      paintFormMode(); paintRules(); schedulePreview();
+      q('.aa__form').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      q('.aa-f__keyword').focus({ preventScroll: true });
+    }
+    function stopEdit() {
+      editing = null;
+      overlay.querySelector('.aa__form').reset();
+      clearTimeout(previewTimer); previewSeq++; paintPreview('');
+      overlay.querySelector('.aa-f__save').disabled = true;
+      paintFormMode(); paintRules();
     }
     function paintPreview(html) { const el = overlay?.querySelector('.aa__preview'); if (el) el.innerHTML = html; }
     function schedulePreview() {
       clearTimeout(previewTimer);
       const rule = formRule();
-      overlay.querySelector('.aa-f__save').disabled = rule.keyword.trim().length < 2;
-      if (rule.keyword.trim().length < 2) { previewSeq++; paintPreview(''); return; }
+      overlay.querySelector('.aa-f__save').disabled = !usable(rule);
+      if (!usable(rule)) { previewSeq++; paintPreview(''); return; }
       previewTimer = setTimeout(async () => {
         const seq = ++previewSeq;
         paintPreview('<p class="aa-note">' + esc(tr('preview.loading', 'Looking at the weeks ahead…')) + '</p>');
@@ -247,8 +329,9 @@
         if (!list.length) return paintPreview('<p class="aa-note">' + esc(tr('preview.none', 'Nothing in the next {weeks} weeks matches yet. The rule keeps watching.', { weeks: state.weeksAhead })) + '</p>');
         paintPreview(
           '<p class="aa-note">' + esc(tr('preview.count', { one: 'This rule catches {count} series in the next {weeks} weeks:', other: 'This rule catches {count} series in the next {weeks} weeks:' }, { count: list.length, weeks: state.weeksAhead })) + '</p>' +
-          '<ul class="aa-preview">' + list.map((m) =>
-            '<li><span class="aa-preview__name">' + nameOf(m) + '</span><span class="aa-dim">' + esc([m.publisher, shipsOf(m)].filter(Boolean).join(' · ')) + '</span>' + chip(m.state) + '</li>').join('') + '</ul>');
+          '<ul class="aa-preview">' + list.slice(0, PREVIEW_MAX).map((m) =>
+            '<li><span class="aa-preview__name">' + nameOf(m) + '</span><span class="aa-dim">' + esc([m.publisher, shipsOf(m)].filter(Boolean).join(' · ')) + '</span>' + chip(m.state) + '</li>').join('') + '</ul>' +
+          (list.length > PREVIEW_MAX ? '<p class="aa-note">' + esc(tr('preview.more', { one: 'and {count} more', other: 'and {count} more' }, { count: list.length - PREVIEW_MAX })) + '</p>' : ''));
       }, 350);
     }
     async function saveRule(e) {
@@ -256,10 +339,14 @@
       const btn = overlay.querySelector('.aa-f__save');
       btn.disabled = true;
       try {
-        await post('/api/autoadd/rules', formRule());
-        toast(tr('form.saved', 'Rule saved'));
-        overlay.querySelector('.aa__form').reset();
-        previewSeq++; paintPreview('');
+        if (editing != null) {
+          await post('/api/autoadd/rules/' + editing, formRule());
+          toast(tr('form.updated', 'Rule updated'));
+        } else {
+          await post('/api/autoadd/rules', formRule());
+          toast(tr('form.saved', 'Rule saved'));
+        }
+        stopEdit();
         await reload();
       } catch (err) { say(err); btn.disabled = false; }
     }
@@ -278,14 +365,18 @@
       }
       el.innerHTML = matches.map((m) => {
         let action = '';
-        if (m.state === 'new' || m.state === 'waiting') action = '<button class="btn btn--ghost btn--sm" data-act="skip">' + esc(tr('matches.skip', 'Skip')) + '</button>';
+        const skip = '<button class="btn btn--ghost btn--sm" data-act="skip">' + esc(tr('matches.skip', 'Skip')) + '</button>';
+        // A rule that asks first: yes adds it now, or as soon as it can be.
+        if (m.state === 'ask') action = '<button class="btn btn--primary btn--sm" data-act="approve">' + esc(tr('matches.add', 'Add')) + '</button>' + skip;
+        else if (m.state === 'waiting' && m.needsOk) action = '<button class="btn btn--sm" data-act="approve">' + esc(tr('matches.addWhenReady', 'Add when ready')) + '</button>' + skip;
+        else if (m.state === 'new' || m.state === 'waiting') action = skip;
         else if (m.state === 'skipped') action = '<button class="btn btn--ghost btn--sm" data-act="forget">' + esc(tr('matches.allow', 'Allow')) + '</button>';
         else if (m.state === 'removed') action = '<button class="btn btn--ghost btn--sm" data-act="forget">' + esc(tr('matches.addAgain', 'Add again')) + '</button>';
         else if (m.state === 'library' && m.seriesId != null) action = '<button class="btn btn--ghost btn--sm" data-act="open">' + esc(tr('matches.open', 'Open')) + '</button>';
         return '<div class="aa-row" data-cv="' + attr(m.cvId) + '" data-key="' + attr(m.key) + '" data-namekey="' + attr(m.nameKey) + '" data-series="' + attr(m.seriesId) + '">' +
           '<div class="aa-row__main"><div class="aa-row__title">' + nameOf(m) + '</div>' +
           '<div class="aa-row__meta">' + esc([m.publisher, shipsOf(m), tr('match.rule', 'Rule: {keyword}', { keyword: m.keyword })].filter(Boolean).join(' · ')) + '</div></div>' +
-          chip(m.state) + action + '</div>';
+          '<div class="aa-row__acts">' + chip(m.state) + action + '</div></div>';
       }).join('');
       wireRowActions(el);
     }
@@ -297,6 +388,11 @@
             if (b.dataset.act === 'open') { close(); return api.openSeries ? api.openSeries(Number(row.dataset.series)) : (location.href = '/volume/' + Number(row.dataset.series)); }
             b.disabled = true;
             if (b.dataset.act === 'skip') await post('/api/autoadd/skip', { key: row.dataset.key });
+            if (b.dataset.act === 'approve') {
+              const title = (matches || []).find((x) => x.key === row.dataset.key)?.series || '';
+              const r = await post('/api/autoadd/approve', { key: row.dataset.key });
+              toast(r.added ? tr('matches.added', '{title} added', { title }) : tr('matches.approved', '{title} will be added once its details are available.', { title }), 'ok');
+            }
             if (b.dataset.act === 'forget') await post('/api/autoadd/forget', { cvId: Number(row.dataset.cv) || null, nameKey: row.dataset.namekey || null });
             await reload();
           } catch (err) { say(err); b.disabled = false; }
@@ -320,7 +416,7 @@
         return '<div class="aa-row" data-cv="' + attr(h.cvId) + '" data-series="' + attr(h.seriesId) + '">' +
           '<div class="aa-row__main"><div class="aa-row__title">' + nameOf(h) + '</div>' +
           '<div class="aa-row__meta">' + esc([h.publisher, when, h.keyword ? tr('match.rule', 'Rule: {keyword}', { keyword: h.keyword }) : ''].filter(Boolean).join(' · ')) + '</div></div>' +
-          (st === 'library' ? '' : chip(st)) + action + '</div>';
+          '<div class="aa-row__acts">' + (st === 'library' ? '' : chip(st)) + action + '</div></div>';
       }).join('');
       wireRowActions(el);
     }
@@ -363,16 +459,23 @@
             '<p class="aa__lead">' + esc(tr('page.lead', 'A rule watches the release list, which reaches {weeks} weeks ahead, and tells you as soon as it catches a series. The series is added to your library once its details are available, which for a brand-new series is usually around the week its first issue ships. It is then monitored like one you added yourself.', { weeks: state.weeksAhead })) + '</p>' +
             '<section><h3 class="aa__h">' + esc(tr('rules.heading', 'Rules')) + '</h3><div class="aa__rules aa-list"></div>' +
               '<form class="aa__form">' +
+                '<p class="aa-note aa__editing" hidden></p>' +
                 '<div class="aa__fields">' +
-                  '<label class="aa-field aa-field--wide"><span>' + esc(tr('form.keyword', 'Series name contains')) + '</span><input type="text" class="aa-f__keyword" maxlength="80" placeholder="' + esc(tr('form.keywordHint', 'e.g. Star Trek')) + '" autocomplete="off"></label>' +
+                  '<label class="aa-field aa-field--wide"><span>' + esc(tr('form.keyword', 'Series name contains')) + '</span><input type="text" class="aa-f__keyword" maxlength="80" placeholder="' + esc(tr('form.keywordHint', 'e.g. Star Trek')) + '" autocomplete="off">' +
+                    '<small class="aa-field__hint">' + esc(tr('form.keywordEmpty', 'Leave this empty and name a publisher to catch every series that publisher has coming.')) + '</small></label>' +
                   '<label class="aa-field"><span>' + esc(tr('form.publisher', 'Publisher (optional)')) + '</span><input type="text" class="aa-f__publisher" maxlength="80" autocomplete="off"></label>' +
                   '<label class="aa-field"><span>' + esc(tr('form.exclude', 'Leave out names containing (optional)')) + '</span><input type="text" class="aa-f__exclude" placeholder="' + esc(tr('form.excludeHint', 'Words, separated by commas')) + '" autocomplete="off"></label>' +
                   '<label class="aa-field"><span>' + esc(tr('form.scope', 'Download')) + '</span><select class="aa-f__scope"><option value="all">' + esc(tr('form.scopeAll', 'Every issue of the series')) + '</option><option value="new">' + esc(tr('form.scopeNew', 'Only the upcoming issue and later')) + '</option></select></label>' +
+                  '<label class="aa-field aa-field--library" hidden><span>' + esc(tr('form.library', 'Add to')) + '</span><select class="aa-f__library"><option value="">' + esc(tr('form.libraryDefault', 'Default library')) + '</option></select></label>' +
                   '<label class="aa-check"><input type="checkbox" class="aa-f__newonly"><span>' + esc(tr('form.newOnly', 'New series only (leave out series that are already past their first issue)')) + '</span></label>' +
+                  '<label class="aa-check"><input type="checkbox" class="aa-f__ask"><span>' + esc(tr('form.ask', 'Ask before adding (each series waits for your OK on this page)')) + '</span></label>' +
                   '<label class="aa-check"><input type="checkbox" class="aa-f__collected" checked><span>' + esc(tr('form.collected', 'Single issues only (skip trade paperbacks, hardcovers and omnibuses)')) + '</span></label>' +
                 '</div>' +
                 '<div class="aa__preview"></div>' +
-                '<button class="btn btn--primary aa-f__save" disabled>' + esc(tr('form.save', 'Save rule')) + '</button>' +
+                '<div class="aa__formfoot">' +
+                  '<button class="btn btn--primary aa-f__save" disabled>' + esc(tr('form.save', 'Save rule')) + '</button>' +
+                  '<button type="button" class="btn btn--ghost aa-f__cancel" hidden>' + esc(tr('form.cancel', 'Cancel')) + '</button>' +
+                '</div>' +
               '</form>' +
             '</section>' +
             '<section><h3 class="aa__h">' + esc(tr('matches.heading', 'Caught in the weeks ahead')) + '</h3><div class="aa__matches aa-list"></div></section>' +
@@ -387,12 +490,14 @@
       form.onsubmit = saveRule;
       form.addEventListener('input', schedulePreview);
       form.addEventListener('change', schedulePreview);
+      overlay.querySelector('.aa-f__cancel').onclick = stopEdit;
       document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && overlay.classList.contains('is-open')) close(); });
     }
     function open() {
       if (!overlay) build();
       overlay.classList.add('is-open');
       reload();
+      loadLibraries();
     }
     function close() { overlay?.classList.remove('is-open'); }
 

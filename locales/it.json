@@ -1,7 +1,8 @@
 {
   "error": {
     "duplicate": "Esiste già una regola uguale.",
-    "gone": "Questa serie non è più in attesa di essere aggiunta."
+    "gone": "Questa serie non è più in attesa di essere aggiunta.",
+    "library": "Questa biblioteca non esiste più."
   },
   "match": {
     "shipped": "Il n. {number} è uscito il {date}",
@@ -13,22 +14,49 @@
   "state": {
     "new": "Verrà aggiunta",
     "waiting": "In attesa di dati",
+    "ask": "Serve il tuo OK",
     "library": "Nella tua biblioteca",
     "skipped": "Esclusa",
     "removed": "Rimossa dalla tua biblioteca"
   },
+  "form": {
+    "libraryDefault": "Biblioteca predefinita",
+    "editing": "Modifica della regola “{keyword}”",
+    "saveChanges": "Salva modifiche",
+    "save": "Salva regola",
+    "updated": "Regola aggiornata",
+    "saved": "Regola salvata",
+    "keyword": "Il nome della serie contiene",
+    "keywordHint": "es. Star Trek",
+    "keywordEmpty": "Lascia vuoto questo campo e indica un editore per catturare tutte le serie in arrivo di quell’editore.",
+    "publisher": "Editore (facoltativo)",
+    "exclude": "Escludi i nomi che contengono (facoltativo)",
+    "excludeHint": "Parole separate da virgole",
+    "scope": "Scarica",
+    "scopeAll": "Ogni albo della serie",
+    "scopeNew": "Solo il prossimo albo e i successivi",
+    "library": "Aggiungi a",
+    "newOnly": "Solo serie nuove (escludi le serie che hanno già superato il primo albo)",
+    "ask": "Chiedi prima di aggiungere (ogni serie attende il tuo OK in questa pagina)",
+    "collected": "Solo albi singoli (niente brossurati, cartonati e omnibus)",
+    "cancel": "Annulla"
+  },
   "rule": {
+    "everything": "Tutto di {publisher}",
     "publisher": "Editore: {publisher}",
     "exclude": "Senza: {words}",
     "newOnly": "Solo serie nuove",
+    "ask": "Chiede prima di aggiungere",
     "noCollected": "Solo albi singoli",
     "withCollected": "Anche raccolte",
     "scopeNew": "Dal prossimo albo in poi",
-    "scopeAll": "Ogni albo"
+    "scopeAll": "Ogni albo",
+    "library": "Biblioteca: {library}"
   },
   "rules": {
     "empty": "Ancora nessuna regola. Scrivine una qui sotto.",
     "toggle": "Attiva o disattiva questa regola",
+    "edit": "Modifica",
     "delete": "Elimina",
     "deleteConfirm": "Eliminare la regola “{keyword}”? Le serie che ha già aggiunto restano nella tua biblioteca.",
     "deleted": "Regola eliminata",
@@ -87,30 +115,24 @@
     "count": {
       "one": "Questa regola cattura {count} serie nelle prossime {weeks} settimane:",
       "other": "Questa regola cattura {count} serie nelle prossime {weeks} settimane:"
+    },
+    "more": {
+      "one": "e {count} altra",
+      "other": "e altre {count}"
     }
-  },
-  "form": {
-    "saved": "Regola salvata",
-    "keyword": "Il nome della serie contiene",
-    "keywordHint": "es. Star Trek",
-    "publisher": "Editore (facoltativo)",
-    "exclude": "Escludi i nomi che contengono (facoltativo)",
-    "excludeHint": "Parole separate da virgole",
-    "scope": "Scarica",
-    "scopeAll": "Ogni albo della serie",
-    "scopeNew": "Solo il prossimo albo e i successivi",
-    "newOnly": "Solo serie nuove (escludi le serie che hanno già superato il primo albo)",
-    "collected": "Solo albi singoli (niente brossurati, cartonati e omnibus)",
-    "save": "Salva regola"
   },
   "matches": {
     "loading": "Lettura dell’elenco delle uscite…",
     "empty": "Ancora niente corrisponde alle tue regole nelle prossime {weeks} settimane.",
     "noRules": "Le serie catturate dalle tue regole compaiono qui.",
     "skip": "Escludi",
+    "add": "Aggiungi",
+    "addWhenReady": "Aggiungi appena possibile",
     "allow": "Consenti",
     "addAgain": "Aggiungi di nuovo",
     "open": "Apri",
+    "added": "{title} aggiunta",
+    "approved": "{title} verrà aggiunta appena i suoi dati saranno disponibili.",
     "heading": "Catturate nelle prossime settimane"
   },
   "history": {
@@ -158,6 +180,18 @@
       },
       "autoaddMore": {
         "title": "Aggiunte altre {count} serie",
+        "body": "L’elenco completo è in Aggiunta automatica."
+      },
+      "autoaddWaitingAsk": {
+        "title": "In arrivo: {title}",
+        "body": "Esce il {date} e corrisponde alla tua regola “{keyword}”. Indica nella pagina Aggiunta automatica se aggiungerla."
+      },
+      "autoaddAsk": {
+        "title": "Serve il tuo OK: {title}",
+        "body": "Corrisponde alla tua regola “{keyword}”. Aggiungila o escludila nella pagina Aggiunta automatica."
+      },
+      "autoaddAskMore": {
+        "title": "Altre {count} serie attendono il tuo OK",
         "body": "L’elenco completo è in Aggiunta automatica."
       }
     }

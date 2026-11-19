@@ -1,7 +1,8 @@
 {
   "error": {
     "duplicate": "A rule like this one already exists.",
-    "gone": "That series is no longer waiting to be added."
+    "gone": "That series is no longer waiting to be added.",
+    "library": "That library no longer exists."
   },
   "match": {
     "shipped": "#{number} shipped {date}",
@@ -13,22 +14,49 @@
   "state": {
     "new": "Will be added",
     "waiting": "Waiting for details",
+    "ask": "Needs your OK",
     "library": "In your library",
     "skipped": "Skipped",
     "removed": "Removed from your library"
   },
+  "form": {
+    "libraryDefault": "Default library",
+    "editing": "Changing the rule “{keyword}”",
+    "saveChanges": "Save changes",
+    "save": "Save rule",
+    "updated": "Rule updated",
+    "saved": "Rule saved",
+    "keyword": "Series name contains",
+    "keywordHint": "e.g. Star Trek",
+    "keywordEmpty": "Leave this empty and name a publisher to catch every series that publisher has coming.",
+    "publisher": "Publisher (optional)",
+    "exclude": "Leave out names containing (optional)",
+    "excludeHint": "Words, separated by commas",
+    "scope": "Download",
+    "scopeAll": "Every issue of the series",
+    "scopeNew": "Only the upcoming issue and later",
+    "library": "Add to",
+    "newOnly": "New series only (leave out series that are already past their first issue)",
+    "ask": "Ask before adding (each series waits for your OK on this page)",
+    "collected": "Single issues only (skip trade paperbacks, hardcovers and omnibuses)",
+    "cancel": "Cancel"
+  },
   "rule": {
+    "everything": "Everything from {publisher}",
     "publisher": "Publisher: {publisher}",
     "exclude": "Leaves out: {words}",
     "newOnly": "New series only",
+    "ask": "Asks before adding",
     "noCollected": "Single issues only",
     "withCollected": "Collected editions too",
     "scopeNew": "From the upcoming issue on",
-    "scopeAll": "Every issue"
+    "scopeAll": "Every issue",
+    "library": "Library: {library}"
   },
   "rules": {
     "empty": "No rules yet. Write one below.",
     "toggle": "Turn this rule on or off",
+    "edit": "Edit",
     "delete": "Delete",
     "deleteConfirm": "Delete the rule “{keyword}”? Series it already added stay in your library.",
     "deleted": "Rule deleted",
@@ -87,30 +115,24 @@
     "count": {
       "one": "This rule catches {count} series in the next {weeks} weeks:",
       "other": "This rule catches {count} series in the next {weeks} weeks:"
+    },
+    "more": {
+      "one": "and {count} more",
+      "other": "and {count} more"
     }
-  },
-  "form": {
-    "saved": "Rule saved",
-    "keyword": "Series name contains",
-    "keywordHint": "e.g. Star Trek",
-    "publisher": "Publisher (optional)",
-    "exclude": "Leave out names containing (optional)",
-    "excludeHint": "Words, separated by commas",
-    "scope": "Download",
-    "scopeAll": "Every issue of the series",
-    "scopeNew": "Only the upcoming issue and later",
-    "newOnly": "New series only (leave out series that are already past their first issue)",
-    "collected": "Single issues only (skip trade paperbacks, hardcovers and omnibuses)",
-    "save": "Save rule"
   },
   "matches": {
     "loading": "Reading the release list…",
     "empty": "Nothing in the next {weeks} weeks matches your rules yet.",
     "noRules": "Series your rules catch show up here.",
     "skip": "Skip",
+    "add": "Add",
+    "addWhenReady": "Add when ready",
     "allow": "Allow",
     "addAgain": "Add again",
     "open": "Open",
+    "added": "{title} added",
+    "approved": "{title} will be added once its details are available.",
     "heading": "Caught in the weeks ahead"
   },
   "history": {
@@ -158,6 +180,18 @@
       },
       "autoaddMore": {
         "title": "{count} more series added",
+        "body": "Auto-add has the full list."
+      },
+      "autoaddWaitingAsk": {
+        "title": "Coming up: {title}",
+        "body": "It ships {date} and matches your rule “{keyword}”. Say on the Auto-add page whether to add it."
+      },
+      "autoaddAsk": {
+        "title": "Needs your OK: {title}",
+        "body": "It matches your rule “{keyword}”. Add or skip it on the Auto-add page."
+      },
+      "autoaddAskMore": {
+        "title": "{count} more series need your OK",
         "body": "Auto-add has the full list."
       }
     }

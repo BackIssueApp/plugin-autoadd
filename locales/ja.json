@@ -1,7 +1,8 @@
 {
   "error": {
     "duplicate": "同じルールがすでにあります。",
-    "gone": "そのシリーズはもう追加待ちではありません。"
+    "gone": "そのシリーズはもう追加待ちではありません。",
+    "library": "そのライブラリはもう存在しません。"
   },
   "match": {
     "shipped": "第{number}号 {date}発売済み",
@@ -13,22 +14,49 @@
   "state": {
     "new": "追加予定",
     "waiting": "情報待ち",
+    "ask": "承認待ち",
     "library": "ライブラリにあります",
     "skipped": "スキップ済み",
     "removed": "ライブラリから削除済み"
   },
+  "form": {
+    "libraryDefault": "既定のライブラリ",
+    "editing": "ルール「{keyword}」を変更中",
+    "saveChanges": "変更を保存",
+    "save": "ルールを保存",
+    "updated": "ルールを更新しました",
+    "saved": "ルールを保存しました",
+    "keyword": "シリーズ名に含まれる語句",
+    "keywordHint": "例：Star Trek",
+    "keywordEmpty": "ここを空欄にして出版社を指定すると、その出版社の今後のシリーズすべてが対象になります。",
+    "publisher": "出版社（任意）",
+    "exclude": "次を含む名前を除外（任意）",
+    "excludeHint": "語句をカンマで区切る",
+    "scope": "ダウンロード",
+    "scopeAll": "シリーズのすべての号",
+    "scopeNew": "次の号とそれ以降のみ",
+    "library": "追加先",
+    "newOnly": "新シリーズのみ（すでに第1号を過ぎたシリーズを除く）",
+    "ask": "追加前に確認する（各シリーズはこのページで承認されるまで待機します）",
+    "collected": "単号のみ（ペーパーバック、ハードカバー、オムニバスを除く）",
+    "cancel": "キャンセル"
+  },
   "rule": {
+    "everything": "{publisher}のすべて",
     "publisher": "出版社：{publisher}",
     "exclude": "除外：{words}",
     "newOnly": "新シリーズのみ",
+    "ask": "追加前に確認",
     "noCollected": "単号のみ",
     "withCollected": "単行本も含む",
     "scopeNew": "次の号から",
-    "scopeAll": "すべての号"
+    "scopeAll": "すべての号",
+    "library": "ライブラリ：{library}"
   },
   "rules": {
     "empty": "ルールはまだありません。下で作成してください。",
     "toggle": "このルールのオン／オフを切り替え",
+    "edit": "編集",
     "delete": "削除",
     "deleteConfirm": "ルール「{keyword}」を削除しますか？ すでに追加されたシリーズはライブラリに残ります。",
     "deleted": "ルールを削除しました",
@@ -79,30 +107,23 @@
     "none": "今後{weeks}週間に一致するものはまだありません。ルールは監視を続けます。",
     "count": {
       "other": "このルールは今後{weeks}週間で{count}シリーズに一致します："
+    },
+    "more": {
+      "other": "ほか{count}件"
     }
-  },
-  "form": {
-    "saved": "ルールを保存しました",
-    "keyword": "シリーズ名に含まれる語句",
-    "keywordHint": "例：Star Trek",
-    "publisher": "出版社（任意）",
-    "exclude": "次を含む名前を除外（任意）",
-    "excludeHint": "語句をカンマで区切る",
-    "scope": "ダウンロード",
-    "scopeAll": "シリーズのすべての号",
-    "scopeNew": "次の号とそれ以降のみ",
-    "newOnly": "新シリーズのみ（すでに第1号を過ぎたシリーズを除く）",
-    "collected": "単号のみ（ペーパーバック、ハードカバー、オムニバスを除く）",
-    "save": "ルールを保存"
   },
   "matches": {
     "loading": "新刊リストを読み込み中…",
     "empty": "今後{weeks}週間にルールと一致するものはまだありません。",
     "noRules": "ルールに一致したシリーズがここに表示されます。",
     "skip": "スキップ",
+    "add": "追加",
+    "addWhenReady": "準備でき次第追加",
     "allow": "許可",
     "addAgain": "もう一度追加",
     "open": "開く",
+    "added": "{title}を追加しました",
+    "approved": "{title}は情報が揃いしだい追加されます。",
     "heading": "今後の数週間で一致したシリーズ"
   },
   "history": {
@@ -150,6 +171,18 @@
       },
       "autoaddMore": {
         "title": "ほかに{count}シリーズを追加しました",
+        "body": "全リストは「自動追加」にあります。"
+      },
+      "autoaddWaitingAsk": {
+        "title": "近日発売：{title}",
+        "body": "{date}発売で、ルール「{keyword}」に一致しました。追加するかどうかを「自動追加」ページで選んでください。"
+      },
+      "autoaddAsk": {
+        "title": "承認待ち：{title}",
+        "body": "ルール「{keyword}」に一致しました。「自動追加」ページで追加またはスキップしてください。"
+      },
+      "autoaddAskMore": {
+        "title": "ほかに{count}シリーズが承認待ちです",
         "body": "全リストは「自動追加」にあります。"
       }
     }

@@ -42,7 +42,7 @@ export async function matchesFor(rules, { feed, tracked, store, fresh = false })
   const { weeks, failed } = await feed.weeks({ fresh });
   const caught = collect(rules, weeks, { pending: store.pendingKeys() });
   return {
-    matches: classify(caught, { tracked: tracked(), handled: store.handled(), skippedKeys: store.skippedKeys() }),
+    matches: classify(caught, { tracked: tracked(), handled: store.handled(), skippedKeys: store.skippedKeys(), approvedKeys: store.approvedKeys() }),
     weeksRead: weeks.length, weeksFailed: failed,
   };
 }
@@ -51,12 +51,14 @@ export async function matchesFor(rules, { feed, tracked, store, fresh = false })
 // { seriesId, queued }; a series is only remembered as added once that
 // succeeds, so a failed add is tried again on the next pass. A series the
 // list has no catalog id for yet is remembered by name, and `onWaiting` is
-// called the first time it is seen.
-export function makeScanner({ store, feed, tracked, add, onAdded = () => {}, onWaiting = () => {}, log = () => {}, clock = () => new Date() }) {
+// called the first time it is seen. A series whose rule asks first is held
+// the same way once its id is known, and `onAsk` is called once for it; it is
+// added when someone says yes.
+export function makeScanner({ store, feed, tracked, add, onAdded = () => {}, onWaiting = () => {}, onAsk = () => {}, log = () => {}, clock = () => new Date() }) {
   let running = null;
   async function pass({ fresh = true } = {}) {
     const rules = store.rules();
-    const summary = { at: clock().toISOString(), rules: rules.filter((r) => r.enabled).length, added: [], failed: [], waiting: 0, matched: 0 };
+    const summary = { at: clock().toISOString(), rules: rules.filter((r) => r.enabled).length, added: [], failed: [], waiting: 0, asking: 0, matched: 0 };
     if (!summary.rules) { store.setMeta('lastRun', summary); return summary; }
     const { matches, weeksRead, weeksFailed } = await matchesFor(rules, { feed, tracked, store, fresh });
     summary.matched = matches.length; summary.weeksRead = weeksRead; summary.weeksFailed = weeksFailed;
@@ -67,6 +69,12 @@ export function makeScanner({ store, feed, tracked, add, onAdded = () => {}, onW
         continue;
       }
       if (!m.cvId) continue; // skipped while waiting: stays known by name
+      if (m.state === 'ask') {
+        summary.asking++;
+        store.pend(m); // followed by name, like a waiting one, until someone answers
+        if (store.markAsked(m.nameKey)) { try { onAsk(m); } catch { /* telling people is best-effort */ } }
+        continue;
+      }
       // The list has its id now: what was known by name moves to the id. A
       // series that still has to be added stays known by name until the add
       // succeeds, so it is followed even once its issues have shipped.
