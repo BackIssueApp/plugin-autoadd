@@ -4,7 +4,9 @@
     "gone": "That series is no longer waiting to be added."
   },
   "match": {
+    "shipped": "#{number} shipped {date}",
     "ships": "#{number} ships {date}",
+    "shippedNoNumber": "Shipped {date}",
     "shipsNoNumber": "Ships {date}",
     "rule": "Rule: {keyword}"
   },
@@ -18,6 +20,7 @@
   "rule": {
     "publisher": "Publisher: {publisher}",
     "exclude": "Leaves out: {words}",
+    "newOnly": "New series only",
     "noCollected": "Single issues only",
     "withCollected": "Collected editions too",
     "scopeNew": "From the upcoming issue on",
@@ -30,6 +33,52 @@
     "deleteConfirm": "Delete the rule “{keyword}”? Series it already added stay in your library.",
     "deleted": "Rule deleted",
     "heading": "Rules"
+  },
+  "existing": {
+    "title": "Series already published that this rule catches",
+    "hide": "Hide",
+    "button": "Existing series",
+    "loading": "Searching the catalog…",
+    "failed": "The catalog could not be searched: {error}",
+    "none": "No series already published match this rule, apart from the ones in your library.",
+    "count": {
+      "one": "{count} series already published matches this rule and is not in your library.",
+      "other": "{count} series already published match this rule and are not in your library."
+    },
+    "selectNone": "Select none",
+    "selectAll": "Select all",
+    "issues": {
+      "one": "{count} issue",
+      "other": "{count} issues"
+    },
+    "add": {
+      "one": "Add {count} series",
+      "other": "Add {count} series"
+    },
+    "adding": "Adding {done} of {total}…",
+    "confirm": {
+      "one": "Add {count} series? Every issue of it becomes wanted.",
+      "other": "Add {count} series? Every issue of each one becomes wanted."
+    },
+    "someFailed": {
+      "one": "{count} series could not be added.",
+      "other": "{count} series could not be added."
+    }
+  },
+  "run": {
+    "added": {
+      "one": "{count} series added",
+      "other": "{count} series added"
+    },
+    "last": "Last checked {date}",
+    "never": "Not checked yet",
+    "running": "Checking…",
+    "failed": {
+      "one": "{count} series could not be added. It is tried again on the next check.",
+      "other": "{count} series could not be added. They are tried again on the next check."
+    },
+    "nothing": "Nothing new to add",
+    "now": "Check now"
   },
   "preview": {
     "loading": "Looking at the weeks ahead…",
@@ -50,6 +99,7 @@
     "scope": "Download",
     "scopeAll": "Every issue of the series",
     "scopeNew": "Only the upcoming issue and later",
+    "newOnly": "New series only (leave out series that are already past their first issue)",
     "collected": "Single issues only (skip trade paperbacks, hardcovers and omnibuses)",
     "save": "Save rule"
   },
@@ -69,25 +119,10 @@
     "addedOn": "Added {date}",
     "heading": "Added so far"
   },
-  "run": {
-    "last": "Last checked {date}",
-    "never": "Not checked yet",
-    "running": "Checking…",
-    "added": {
-      "one": "{count} series added",
-      "other": "{count} series added"
-    },
-    "failed": {
-      "one": "{count} series could not be added. It is tried again on the next check.",
-      "other": "{count} series could not be added. They are tried again on the next check."
-    },
-    "nothing": "Nothing new to add",
-    "now": "Check now"
-  },
   "page": {
     "title": "Auto-add",
     "close": "Close (Esc)",
-    "lead": "A rule adds a series to your library as soon as it appears on the release list, up to {weeks} weeks before its first issue ships. The series is then monitored like one you added yourself."
+    "lead": "A rule watches the release list, which reaches {weeks} weeks ahead, and tells you as soon as it catches a series. The series is added to your library once its details are available, which for a brand-new series is usually around the week its first issue ships. It is then monitored like one you added yourself."
   },
   "menu": {
     "label": "Auto-add",
@@ -96,7 +131,7 @@
   "_shared": {
     "plugins": {
       "autoadd": {
-        "description": "Keyword rules that add upcoming series to the library automatically, up to eight weeks before the first issue ships"
+        "description": "Keyword rules that watch the release list up to eight weeks ahead and add matching series to the library automatically"
       }
     },
     "permissions": {
@@ -113,6 +148,10 @@
       }
     },
     "notifications": {
+      "autoaddWaiting": {
+        "title": "Coming up: {title}",
+        "body": "It ships {date} and matches your rule “{keyword}”. It is added as soon as its details are available."
+      },
       "autoaddAdded": {
         "title": "Added {title}",
         "body": "It matches your rule “{keyword}”."

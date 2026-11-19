@@ -4,7 +4,9 @@
     "gone": "Essa série já não está à espera de ser adicionada."
   },
   "match": {
+    "shipped": "O n.º {number} saiu a {date}",
     "ships": "O n.º {number} sai a {date}",
+    "shippedNoNumber": "Saiu a {date}",
     "shipsNoNumber": "Sai a {date}",
     "rule": "Regra: {keyword}"
   },
@@ -18,6 +20,7 @@
   "rule": {
     "publisher": "Editora: {publisher}",
     "exclude": "Sem: {words}",
+    "newOnly": "Só séries novas",
     "noCollected": "Só edições individuais",
     "withCollected": "Coletâneas também",
     "scopeNew": "A partir da próxima edição",
@@ -30,6 +33,52 @@
     "deleteConfirm": "Eliminar a regra «{keyword}»? As séries que ela já adicionou ficam na sua biblioteca.",
     "deleted": "Regra eliminada",
     "heading": "Regras"
+  },
+  "existing": {
+    "title": "Séries já publicadas que esta regra apanha",
+    "hide": "Ocultar",
+    "button": "Séries existentes",
+    "loading": "A procurar no catálogo…",
+    "failed": "Não foi possível procurar no catálogo: {error}",
+    "none": "Nenhuma série já publicada corresponde a esta regra, além das que estão na sua biblioteca.",
+    "count": {
+      "one": "{count} série já publicada corresponde a esta regra e não está na sua biblioteca.",
+      "other": "{count} séries já publicadas correspondem a esta regra e não estão na sua biblioteca."
+    },
+    "selectNone": "Não selecionar nenhuma",
+    "selectAll": "Selecionar todas",
+    "issues": {
+      "one": "{count} edição",
+      "other": "{count} edições"
+    },
+    "add": {
+      "one": "Adicionar {count} série",
+      "other": "Adicionar {count} séries"
+    },
+    "adding": "A adicionar {done} de {total}…",
+    "confirm": {
+      "one": "Adicionar {count} série? Todas as suas edições passam a ser procuradas.",
+      "other": "Adicionar {count} séries? Todas as edições de cada uma passam a ser procuradas."
+    },
+    "someFailed": {
+      "one": "Não foi possível adicionar {count} série.",
+      "other": "Não foi possível adicionar {count} séries."
+    }
+  },
+  "run": {
+    "added": {
+      "one": "{count} série adicionada",
+      "other": "{count} séries adicionadas"
+    },
+    "last": "Última verificação: {date}",
+    "never": "Ainda não verificado",
+    "running": "A verificar…",
+    "failed": {
+      "one": "Não foi possível adicionar {count} série. Tenta-se de novo na próxima verificação.",
+      "other": "Não foi possível adicionar {count} séries. Tenta-se de novo na próxima verificação."
+    },
+    "nothing": "Nada de novo para adicionar",
+    "now": "Verificar agora"
   },
   "preview": {
     "loading": "A consultar as próximas semanas…",
@@ -50,6 +99,7 @@
     "scope": "Transferir",
     "scopeAll": "Todas as edições da série",
     "scopeNew": "Só a próxima edição e as seguintes",
+    "newOnly": "Só séries novas (deixar de fora as que já passaram da primeira edição)",
     "collected": "Só edições individuais (sem brochuras, capas duras e omnibus)",
     "save": "Guardar regra"
   },
@@ -69,25 +119,10 @@
     "addedOn": "Adicionada a {date}",
     "heading": "Adicionadas até agora"
   },
-  "run": {
-    "last": "Última verificação: {date}",
-    "never": "Ainda não verificado",
-    "running": "A verificar…",
-    "added": {
-      "one": "{count} série adicionada",
-      "other": "{count} séries adicionadas"
-    },
-    "failed": {
-      "one": "Não foi possível adicionar {count} série. Tenta-se de novo na próxima verificação.",
-      "other": "Não foi possível adicionar {count} séries. Tenta-se de novo na próxima verificação."
-    },
-    "nothing": "Nada de novo para adicionar",
-    "now": "Verificar agora"
-  },
   "page": {
     "title": "Adição automática",
     "close": "Fechar (Esc)",
-    "lead": "Uma regra adiciona uma série à sua biblioteca assim que ela aparece na lista de lançamentos, até {weeks} semanas antes de sair a primeira edição. Depois a série é monitorizada como uma que tenha adicionado."
+    "lead": "Uma regra vigia a lista de lançamentos, que abrange as próximas {weeks} semanas, e avisa-o assim que apanha uma série. A série é adicionada à sua biblioteca quando os seus dados estão disponíveis, o que numa série acabada de anunciar costuma acontecer por volta da semana em que sai a primeira edição. Depois é monitorizada como uma que tenha adicionado."
   },
   "menu": {
     "label": "Adição automática",
@@ -96,7 +131,7 @@
   "_shared": {
     "plugins": {
       "autoadd": {
-        "description": "Regras por palavra-chave que adicionam automaticamente à biblioteca as séries que aí vêm, até oito semanas antes de sair a primeira edição"
+        "description": "Regras por palavra-chave que vigiam a lista de lançamentos com até oito semanas de antecedência e adicionam automaticamente à biblioteca as séries correspondentes"
       }
     },
     "permissions": {
@@ -113,6 +148,10 @@
       }
     },
     "notifications": {
+      "autoaddWaiting": {
+        "title": "Em breve: {title}",
+        "body": "Sai a {date} e corresponde à sua regra «{keyword}». É adicionada assim que os seus dados estiverem disponíveis."
+      },
       "autoaddAdded": {
         "title": "{title} adicionada",
         "body": "Corresponde à sua regra «{keyword}»."

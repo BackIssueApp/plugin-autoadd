@@ -4,7 +4,9 @@
     "gone": "Questa serie non è più in attesa di essere aggiunta."
   },
   "match": {
+    "shipped": "Il n. {number} è uscito il {date}",
     "ships": "Il n. {number} esce il {date}",
+    "shippedNoNumber": "Uscito il {date}",
     "shipsNoNumber": "Esce il {date}",
     "rule": "Regola: {keyword}"
   },
@@ -18,6 +20,7 @@
   "rule": {
     "publisher": "Editore: {publisher}",
     "exclude": "Senza: {words}",
+    "newOnly": "Solo serie nuove",
     "noCollected": "Solo albi singoli",
     "withCollected": "Anche raccolte",
     "scopeNew": "Dal prossimo albo in poi",
@@ -30,6 +33,52 @@
     "deleteConfirm": "Eliminare la regola “{keyword}”? Le serie che ha già aggiunto restano nella tua biblioteca.",
     "deleted": "Regola eliminata",
     "heading": "Regole"
+  },
+  "existing": {
+    "title": "Serie già pubblicate catturate da questa regola",
+    "hide": "Nascondi",
+    "button": "Serie esistenti",
+    "loading": "Ricerca nel catalogo…",
+    "failed": "Impossibile cercare nel catalogo: {error}",
+    "none": "Nessuna serie già pubblicata corrisponde a questa regola, a parte quelle nella tua biblioteca.",
+    "count": {
+      "one": "{count} serie già pubblicata corrisponde a questa regola e non è nella tua biblioteca.",
+      "other": "{count} serie già pubblicate corrispondono a questa regola e non sono nella tua biblioteca."
+    },
+    "selectNone": "Deseleziona tutto",
+    "selectAll": "Seleziona tutto",
+    "issues": {
+      "one": "{count} albo",
+      "other": "{count} albi"
+    },
+    "add": {
+      "one": "Aggiungi {count} serie",
+      "other": "Aggiungi {count} serie"
+    },
+    "adding": "Aggiunta di {done} su {total}…",
+    "confirm": {
+      "one": "Aggiungere {count} serie? Verranno cercati tutti i suoi albi.",
+      "other": "Aggiungere {count} serie? Verranno cercati tutti gli albi di ciascuna."
+    },
+    "someFailed": {
+      "one": "Non è stato possibile aggiungere {count} serie.",
+      "other": "Non è stato possibile aggiungere {count} serie."
+    }
+  },
+  "run": {
+    "added": {
+      "one": "{count} serie aggiunta",
+      "other": "{count} serie aggiunte"
+    },
+    "last": "Ultimo controllo: {date}",
+    "never": "Non ancora controllato",
+    "running": "Controllo in corso…",
+    "failed": {
+      "one": "Non è stato possibile aggiungere {count} serie. Si riprova al prossimo controllo.",
+      "other": "Non è stato possibile aggiungere {count} serie. Si riprova al prossimo controllo."
+    },
+    "nothing": "Niente di nuovo da aggiungere",
+    "now": "Controlla ora"
   },
   "preview": {
     "loading": "Lettura delle prossime settimane…",
@@ -50,6 +99,7 @@
     "scope": "Scarica",
     "scopeAll": "Ogni albo della serie",
     "scopeNew": "Solo il prossimo albo e i successivi",
+    "newOnly": "Solo serie nuove (escludi le serie che hanno già superato il primo albo)",
     "collected": "Solo albi singoli (niente brossurati, cartonati e omnibus)",
     "save": "Salva regola"
   },
@@ -69,25 +119,10 @@
     "addedOn": "Aggiunta il {date}",
     "heading": "Aggiunte finora"
   },
-  "run": {
-    "last": "Ultimo controllo: {date}",
-    "never": "Non ancora controllato",
-    "running": "Controllo in corso…",
-    "added": {
-      "one": "{count} serie aggiunta",
-      "other": "{count} serie aggiunte"
-    },
-    "failed": {
-      "one": "Non è stato possibile aggiungere {count} serie. Si riprova al prossimo controllo.",
-      "other": "Non è stato possibile aggiungere {count} serie. Si riprova al prossimo controllo."
-    },
-    "nothing": "Niente di nuovo da aggiungere",
-    "now": "Controlla ora"
-  },
   "page": {
     "title": "Aggiunta automatica",
     "close": "Chiudi (Esc)",
-    "lead": "Una regola aggiunge una serie alla tua biblioteca appena compare nell’elenco delle uscite, fino a {weeks} settimane prima dell’uscita del primo albo. La serie viene poi monitorata come una aggiunta da te."
+    "lead": "Una regola tiene d’occhio l’elenco delle uscite, che copre le prossime {weeks} settimane, e ti avvisa appena cattura una serie. La serie viene aggiunta alla tua biblioteca quando i suoi dati sono disponibili, cosa che per una serie nuovissima avviene di solito intorno alla settimana di uscita del primo albo. Poi viene monitorata come una aggiunta da te."
   },
   "menu": {
     "label": "Aggiunta automatica",
@@ -96,7 +131,7 @@
   "_shared": {
     "plugins": {
       "autoadd": {
-        "description": "Regole per parola chiave che aggiungono automaticamente alla biblioteca le serie in arrivo, fino a otto settimane prima dell’uscita del primo albo"
+        "description": "Regole per parola chiave che tengono d’occhio l’elenco delle uscite fino a otto settimane in anticipo e aggiungono automaticamente alla biblioteca le serie corrispondenti"
       }
     },
     "permissions": {
@@ -113,6 +148,10 @@
       }
     },
     "notifications": {
+      "autoaddWaiting": {
+        "title": "In arrivo: {title}",
+        "body": "Esce il {date} e corrisponde alla tua regola “{keyword}”. Verrà aggiunta appena i suoi dati saranno disponibili."
+      },
       "autoaddAdded": {
         "title": "Aggiunta {title}",
         "body": "Corrisponde alla tua regola “{keyword}”."

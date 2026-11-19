@@ -75,3 +75,35 @@
 .aa-preview li { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; font-size: 13px; }
 .aa-preview__name { font-weight: 600; }
 .aa-preview .aa-chip { margin-left: auto; }
+
+/* A rule and, under it, the series already published that it catches. */
+.aa-rule { display: flex; flex-direction: column; }
+.aa-existing {
+  margin: -1px 0 0; padding: 12px; display: flex; flex-direction: column; gap: 10px;
+  background: var(--ink, #15131c); border: 1px solid var(--line, #352f44);
+  border-top-style: dashed; border-radius: 0 0 var(--radius-sm, 7px) var(--radius-sm, 7px);
+}
+.aa-existing[hidden] { display: none; }
+.aa-rule:has(.aa-existing:not([hidden])) > .aa-row { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.aa-existing__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.aa-existing__list {
+  list-style: none; margin: 0; padding: 0; max-height: 300px; overflow-y: auto;
+  border: 1px solid var(--line, #352f44); border-radius: var(--radius-sm, 7px); background: var(--panel, #1e1b27);
+}
+.aa-existing__list li + li { border-top: 1px solid var(--line, #352f44); }
+.aa-existing__list label { display: flex; align-items: flex-start; gap: 10px; padding: 7px 10px; font-size: 13px; cursor: pointer; }
+.aa-existing__text { flex: 1; min-width: 0; display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 10px; }
+.aa-existing__list label:hover { background: var(--panel-2, #272231); }
+.aa-existing__list input { flex: none; margin: 2px 0 0; accent-color: var(--accent, #ff2d6f); }
+.aa-existing__name { font-weight: 600; overflow-wrap: anywhere; }
+.aa-existing__foot { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+/* Narrow screens: a rule's buttons drop under its name, and the "last
+   checked" note takes its own line in the header. */
+@media (max-width: 620px) {
+  .aa-rule > .aa-row { flex-wrap: wrap; }
+  .aa-rule > .aa-row .aa-row__main { flex: 1 1 60%; }
+  .aa__head { flex-wrap: wrap; row-gap: 4px; }
+  .aa__run { margin-left: auto; }
+  .aa__last { order: 4; flex-basis: 100%; margin-left: 0; text-align: left; }
+}

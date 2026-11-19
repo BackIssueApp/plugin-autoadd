@@ -1,7 +1,9 @@
 // Auto-add state: plugin-owned tables inside the app's database, so backups
-// cover them. Rules are what the user wrote; autoadd_series is the record of
+// cover them. Rules are what the user wrote. autoadd_series is the record of
 // every series a rule has dealt with (added, or skipped by hand), which is
 // what keeps a series from being added a second time after it was removed.
+// autoadd_pending holds the series a rule caught before the release list had
+// a catalog id for them: they are known by name until the id arrives.
 import Database from 'better-sqlite3';
 
 const NOW = "strftime('%Y-%m-%dT%H:%M:%SZ','now')";
@@ -17,6 +19,7 @@ export function openStore(dbPath) {
       publisher TEXT NOT NULL DEFAULT '',
       exclude TEXT NOT NULL DEFAULT '',
       skip_collected INTEGER NOT NULL DEFAULT 1,
+      new_only INTEGER NOT NULL DEFAULT 0,
       scope TEXT NOT NULL DEFAULT 'all',          -- all | new
       enabled INTEGER NOT NULL DEFAULT 1,
       created_by TEXT,
@@ -32,12 +35,22 @@ export function openStore(dbPath) {
       issue_number TEXT, ship_date TEXT,
       at TEXT NOT NULL DEFAULT (${NOW})
     );
+    CREATE TABLE IF NOT EXISTS autoadd_pending (
+      name_key TEXT PRIMARY KEY,                  -- normalized name | start year
+      title TEXT, year TEXT, keyword TEXT, rule_id INTEGER,
+      issue_number TEXT, ship_date TEXT,
+      skipped INTEGER NOT NULL DEFAULT 0,
+      first_seen TEXT NOT NULL DEFAULT (${NOW})
+    );
     CREATE TABLE IF NOT EXISTS autoadd_meta (key TEXT PRIMARY KEY, value TEXT);
   `);
+  // Columns added after the first build.
+  const ruleCols = db.prepare("SELECT name FROM pragma_table_info('autoadd_rules')").all().map((r) => r.name);
+  if (!ruleCols.includes('new_only')) db.exec('ALTER TABLE autoadd_rules ADD COLUMN new_only INTEGER NOT NULL DEFAULT 0');
 
   const shape = (r) => r && ({
     id: r.id, keyword: r.keyword, publisher: r.publisher || '', exclude: r.exclude || '',
-    skipCollected: !!r.skip_collected, scope: r.scope === 'new' ? 'new' : 'all',
+    skipCollected: !!r.skip_collected, newOnly: !!r.new_only, scope: r.scope === 'new' ? 'new' : 'all',
     enabled: !!r.enabled, createdBy: r.created_by || null, createdAt: r.created_at,
   });
 
@@ -48,8 +61,8 @@ export function openStore(dbPath) {
     rule: (id) => shape(db.prepare('SELECT * FROM autoadd_rules WHERE id = ?').get(Number(id))),
 
     createRule(rule, byName = null) {
-      const r = db.prepare(`INSERT INTO autoadd_rules (keyword, publisher, exclude, skip_collected, scope, created_by)
-        VALUES (?, ?, ?, ?, ?, ?)`).run(rule.keyword, rule.publisher || '', rule.exclude || '', rule.skipCollected ? 1 : 0, rule.scope, byName);
+      const r = db.prepare(`INSERT INTO autoadd_rules (keyword, publisher, exclude, skip_collected, new_only, scope, created_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?)`).run(rule.keyword, rule.publisher || '', rule.exclude || '', rule.skipCollected ? 1 : 0, rule.newOnly ? 1 : 0, rule.scope, byName);
       return this.rule(r.lastInsertRowid);
     },
 
@@ -58,8 +71,8 @@ export function openStore(dbPath) {
       const cur = this.rule(id);
       if (!cur) return null;
       const next = { ...cur, ...patch };
-      db.prepare('UPDATE autoadd_rules SET keyword=?, publisher=?, exclude=?, skip_collected=?, scope=?, enabled=? WHERE id=?')
-        .run(next.keyword, next.publisher || '', next.exclude || '', next.skipCollected ? 1 : 0, next.scope, next.enabled ? 1 : 0, cur.id);
+      db.prepare('UPDATE autoadd_rules SET keyword=?, publisher=?, exclude=?, skip_collected=?, new_only=?, scope=?, enabled=? WHERE id=?')
+        .run(next.keyword, next.publisher || '', next.exclude || '', next.skipCollected ? 1 : 0, next.newOnly ? 1 : 0, next.scope, next.enabled ? 1 : 0, cur.id);
       return this.rule(cur.id);
     },
 
@@ -91,6 +104,31 @@ export function openStore(dbPath) {
       cvId: r.cv_id, status: r.status, ruleId: r.rule_id, keyword: r.keyword, series: r.title, publisher: r.publisher,
       seriesYear: r.year, seriesId: r.series_id, number: r.issue_number, shipdate: r.ship_date, at: r.at,
     })),
+
+    // ---- series caught before the list had a catalog id for them ----
+    // Name keys of everything waiting (skipped or not): a series in here is
+    // followed up even after its issues have left the weeks ahead.
+    pendingKeys: () => new Set(db.prepare('SELECT name_key FROM autoadd_pending').all().map((r) => r.name_key)),
+    skippedKeys: () => new Set(db.prepare('SELECT name_key FROM autoadd_pending WHERE skipped = 1').all().map((r) => r.name_key)),
+
+    // Start waiting on a series. True the first time it is seen, which is
+    // when people are told about it.
+    pend(m) {
+      return db.prepare(`INSERT OR IGNORE INTO autoadd_pending (name_key, title, year, keyword, rule_id, issue_number, ship_date)
+        VALUES (?, ?, ?, ?, ?, ?, ?)`).run(m.nameKey, m.series ?? null, m.seriesYear ?? null, m.keyword ?? null, m.ruleId ?? null, m.number ?? null, m.shipdate ?? null).changes > 0;
+    },
+    // "Not this one" for a series that is still waiting, and taking it back.
+    skipPending(m, skipped = true) {
+      this.pend(m);
+      return db.prepare('UPDATE autoadd_pending SET skipped = ? WHERE name_key = ?').run(skipped ? 1 : 0, m.nameKey).changes > 0;
+    },
+    unskipPending: (nameKey) => db.prepare('UPDATE autoadd_pending SET skipped = 0 WHERE name_key = ? AND skipped = 1').run(String(nameKey)).changes > 0,
+    unpend: (nameKey) => db.prepare('DELETE FROM autoadd_pending WHERE name_key = ?').run(String(nameKey)).changes > 0,
+    // A series that never got its id is let go after a few months.
+    prunePending(days = 120, now = Date.now()) {
+      const cutoff = new Date(now - days * 86400000).toISOString().slice(0, 19) + 'Z';
+      return db.prepare('DELETE FROM autoadd_pending WHERE first_seen < ?').run(cutoff).changes;
+    },
 
     getMeta(key) {
       const v = db.prepare('SELECT value FROM autoadd_meta WHERE key = ?').get(key)?.value;

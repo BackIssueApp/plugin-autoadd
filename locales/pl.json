@@ -4,7 +4,9 @@
     "gone": "Ta seria nie czeka już na dodanie."
   },
   "match": {
+    "shipped": "Nr {number} ukazał się {date}",
     "ships": "Nr {number} ukaże się {date}",
+    "shippedNoNumber": "Ukazało się {date}",
     "shipsNoNumber": "Ukaże się {date}",
     "rule": "Reguła: {keyword}"
   },
@@ -18,6 +20,7 @@
   "rule": {
     "publisher": "Wydawca: {publisher}",
     "exclude": "Bez: {words}",
+    "newOnly": "Tylko nowe serie",
     "noCollected": "Tylko pojedyncze zeszyty",
     "withCollected": "Także wydania zbiorcze",
     "scopeNew": "Od najbliższego zeszytu",
@@ -30,6 +33,66 @@
     "deleteConfirm": "Usunąć regułę „{keyword}”? Serie, które już dodała, zostaną w twojej bibliotece.",
     "deleted": "Reguła usunięta",
     "heading": "Reguły"
+  },
+  "existing": {
+    "title": "Wydane już serie, które wyłapuje ta reguła",
+    "hide": "Ukryj",
+    "button": "Istniejące serie",
+    "loading": "Przeszukiwanie katalogu…",
+    "failed": "Nie udało się przeszukać katalogu: {error}",
+    "none": "Poza seriami z twojej biblioteki żadna wydana już seria nie pasuje do tej reguły.",
+    "count": {
+      "one": "{count} wydana już seria pasuje do tej reguły i nie ma jej w twojej bibliotece.",
+      "few": "{count} wydane już serie pasują do tej reguły i nie ma ich w twojej bibliotece.",
+      "many": "{count} wydanych już serii pasuje do tej reguły i nie ma ich w twojej bibliotece.",
+      "other": "{count} wydanych już serii pasuje do tej reguły i nie ma ich w twojej bibliotece."
+    },
+    "selectNone": "Odznacz wszystkie",
+    "selectAll": "Zaznacz wszystkie",
+    "issues": {
+      "one": "{count} zeszyt",
+      "few": "{count} zeszyty",
+      "many": "{count} zeszytów",
+      "other": "{count} zeszytu"
+    },
+    "add": {
+      "one": "Dodaj {count} serię",
+      "few": "Dodaj {count} serie",
+      "many": "Dodaj {count} serii",
+      "other": "Dodaj {count} serii"
+    },
+    "adding": "Dodawanie {done} z {total}…",
+    "confirm": {
+      "one": "Dodać {count} serię? Każdy jej zeszyt będzie poszukiwany.",
+      "few": "Dodać {count} serie? Każdy zeszyt każdej z nich będzie poszukiwany.",
+      "many": "Dodać {count} serii? Każdy zeszyt każdej z nich będzie poszukiwany.",
+      "other": "Dodać {count} serii? Każdy zeszyt każdej z nich będzie poszukiwany."
+    },
+    "someFailed": {
+      "one": "Nie udało się dodać {count} serii.",
+      "few": "Nie udało się dodać {count} serii.",
+      "many": "Nie udało się dodać {count} serii.",
+      "other": "Nie udało się dodać {count} serii."
+    }
+  },
+  "run": {
+    "added": {
+      "one": "Dodano {count} serię",
+      "few": "Dodano {count} serie",
+      "many": "Dodano {count} serii",
+      "other": "Dodano {count} serii"
+    },
+    "last": "Ostatnie sprawdzenie: {date}",
+    "never": "Jeszcze nie sprawdzano",
+    "running": "Sprawdzanie…",
+    "failed": {
+      "one": "Nie udało się dodać {count} serii. Kolejna próba przy następnym sprawdzeniu.",
+      "few": "Nie udało się dodać {count} serii. Kolejna próba przy następnym sprawdzeniu.",
+      "many": "Nie udało się dodać {count} serii. Kolejna próba przy następnym sprawdzeniu.",
+      "other": "Nie udało się dodać {count} serii. Kolejna próba przy następnym sprawdzeniu."
+    },
+    "nothing": "Nic nowego do dodania",
+    "now": "Sprawdź teraz"
   },
   "preview": {
     "loading": "Sprawdzanie nadchodzących tygodni…",
@@ -52,6 +115,7 @@
     "scope": "Pobieraj",
     "scopeAll": "Każdy zeszyt serii",
     "scopeNew": "Tylko najbliższy zeszyt i kolejne",
+    "newOnly": "Tylko nowe serie (pomiń serie, które mają już za sobą pierwszy zeszyt)",
     "collected": "Tylko pojedyncze zeszyty (bez wydań w miękkiej i twardej oprawie oraz omnibusów)",
     "save": "Zapisz regułę"
   },
@@ -71,29 +135,10 @@
     "addedOn": "Dodano {date}",
     "heading": "Dodane do tej pory"
   },
-  "run": {
-    "last": "Ostatnie sprawdzenie: {date}",
-    "never": "Jeszcze nie sprawdzano",
-    "running": "Sprawdzanie…",
-    "added": {
-      "one": "Dodano {count} serię",
-      "few": "Dodano {count} serie",
-      "many": "Dodano {count} serii",
-      "other": "Dodano {count} serii"
-    },
-    "failed": {
-      "one": "Nie udało się dodać {count} serii. Kolejna próba przy następnym sprawdzeniu.",
-      "few": "Nie udało się dodać {count} serii. Kolejna próba przy następnym sprawdzeniu.",
-      "many": "Nie udało się dodać {count} serii. Kolejna próba przy następnym sprawdzeniu.",
-      "other": "Nie udało się dodać {count} serii. Kolejna próba przy następnym sprawdzeniu."
-    },
-    "nothing": "Nic nowego do dodania",
-    "now": "Sprawdź teraz"
-  },
   "page": {
     "title": "Automatyczne dodawanie",
     "close": "Zamknij (Esc)",
-    "lead": "Reguła dodaje serię do twojej biblioteki, gdy tylko pojawi się ona na liście premier, nawet {weeks} tygodni przed ukazaniem się pierwszego zeszytu. Potem seria jest monitorowana tak jak dodana ręcznie."
+    "lead": "Reguła obserwuje listę premier, która sięga {weeks} tygodni naprzód, i daje znać, gdy tylko wyłapie serię. Seria trafia do twojej biblioteki, gdy jej dane są dostępne, co w przypadku zupełnie nowej serii następuje zwykle w okolicach tygodnia premiery pierwszego zeszytu. Potem jest monitorowana tak jak dodana ręcznie."
   },
   "menu": {
     "label": "Automatyczne dodawanie",
@@ -102,7 +147,7 @@
   "_shared": {
     "plugins": {
       "autoadd": {
-        "description": "Reguły ze słowami kluczowymi, które automatycznie dodają nadchodzące serie do biblioteki, nawet osiem tygodni przed ukazaniem się pierwszego zeszytu"
+        "description": "Reguły ze słowami kluczowymi, które obserwują listę premier nawet osiem tygodni naprzód i automatycznie dodają pasujące serie do biblioteki"
       }
     },
     "permissions": {
@@ -119,6 +164,10 @@
       }
     },
     "notifications": {
+      "autoaddWaiting": {
+        "title": "Wkrótce: {title}",
+        "body": "Ukaże się {date} i pasuje do twojej reguły „{keyword}”. Zostanie dodana, gdy tylko jej dane będą dostępne."
+      },
       "autoaddAdded": {
         "title": "Dodano: {title}",
         "body": "Pasuje do twojej reguły „{keyword}”."

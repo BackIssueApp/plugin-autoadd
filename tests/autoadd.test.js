@@ -1,17 +1,19 @@
 // Auto-add: what a rule catches, what happens to each caught series, the
-// record that keeps a series from being added twice, and a whole pass run
-// against a fake release list and a fake library.
+// record that keeps a series from being added twice, following a series that
+// was caught before the list had an id for it, and a whole pass run against a
+// fake release list and a fake library.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { normalize, hasPhrase, cleanRule, ruleMatches, collect, classify, isCollected, alreadyOut } from '../match.js';
+import { normalize, hasPhrase, cleanRule, ruleMatches, collect, classify, isCollected, alreadyOut, pickExisting, nameKeyOf } from '../match.js';
 import { openStore } from '../store.js';
 import { makeFeed, makeScanner, matchesFor } from '../scan.js';
 
 const rel = (series, extra = {}) => ({ series, publisher: 'IDW Publishing', type: 'Single Issue', issue: '1', shipdate: '2026-12-02', comicid: null, seriesyear: '2026', ...extra });
 const rule = (keyword, extra = {}) => ({ id: 1, enabled: true, ...cleanRule({ keyword, ...extra }).rule });
+const week = (releases, past = false) => ({ week: 'w', year: 'y', past, releases });
 
 function tmpStore() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'autoadd-test-'));
@@ -32,14 +34,15 @@ test('a phrase matches whole words only', () => {
   assert.equal(hasPhrase('anything', ''), false);
 });
 
-test('cleanRule: a keyword is required, defaults are single issues and every issue', () => {
+test('cleanRule: a keyword is required, defaults are single issues, every issue, any series', () => {
   assert.ok(cleanRule({ keyword: ' ' }).error);
   assert.ok(cleanRule({ keyword: '!' }).error);
   assert.ok(cleanRule({ keyword: 'x'.repeat(81) }).error);
   const { rule: r } = cleanRule({ keyword: '  Star   Trek ', exclude: 'omnibus, , Adventures', scope: 'bogus' });
-  assert.deepEqual(r, { keyword: 'Star Trek', publisher: '', exclude: 'omnibus, Adventures', skipCollected: true, scope: 'all' });
+  assert.deepEqual(r, { keyword: 'Star Trek', publisher: '', exclude: 'omnibus, Adventures', skipCollected: true, newOnly: false, scope: 'all' });
   assert.equal(cleanRule({ keyword: 'Batman', scope: 'new', skipCollected: false }).rule.scope, 'new');
   assert.equal(cleanRule({ keyword: 'Batman', skipCollected: false }).rule.skipCollected, false);
+  assert.equal(cleanRule({ keyword: 'Batman', newOnly: 1 }).rule.newOnly, true);
 });
 
 test('a rule catches by name, and is narrowed by publisher, left-out words and collections', () => {
@@ -54,40 +57,79 @@ test('a rule catches by name, and is narrowed by publisher, left-out words and c
   assert.equal(isCollected('Limited Series'), false);
 });
 
-test('collect gives one row per series with its first issue, and classify says what happens to it', () => {
+test('collect gives one row per series with its next issue, and classify says what happens to it', () => {
   const weeks = [
-    { week: '48', year: '2026', releases: [
+    week([
       rel('Star Trek: Zero Point', { comicid: 177482, issue: '2', shipdate: '2026-12-02' }),
       rel('Star Trek', { comicid: 177149, issue: '3', shipdate: '2026-12-16' }),
       rel('Batman', { comicid: 5 }),
-    ] },
-    { week: '01', year: '2027', releases: [
+    ]),
+    week([
       rel('Star Trek: Zero Point', { comicid: 177482, issue: '3', shipdate: '2027-01-06' }),
       rel('Star Trek: Lower Decks', { comicid: null, issue: '1', shipdate: '2027-01-06', seriesyear: '2027' }),
       rel('Star Trek: Year Five', { comicid: 900, issue: '1', shipdate: '2027-01-06' }),
       rel('Star Trek: Defiant', { comicid: 901, issue: '9', shipdate: '2027-01-06' }),
       rel('Star Trek: Old One', { comicid: 902, issue: '1', shipdate: '2027-01-06' }),
-    ] },
+      rel('Star Trek: Not For Me', { comicid: null, issue: '1', shipdate: '2027-01-06', seriesyear: '2027' }),
+    ]),
   ];
   const off = { ...rule('batman'), id: 2, enabled: false };
   const got = collect([rule('star trek'), off], weeks);
-  assert.deepEqual(got.map((m) => m.series), ['Star Trek: Zero Point', 'Star Trek', 'Star Trek: Defiant', 'Star Trek: Lower Decks', 'Star Trek: Old One', 'Star Trek: Year Five']);
+  assert.deepEqual(got.map((m) => m.series), ['Star Trek: Zero Point', 'Star Trek', 'Star Trek: Defiant', 'Star Trek: Lower Decks', 'Star Trek: Not For Me', 'Star Trek: Old One', 'Star Trek: Year Five']);
   const zp = got[0];
   assert.equal(zp.number, '2'); assert.equal(zp.shipdate, '2026-12-02'); assert.equal(zp.issues, 2); assert.equal(zp.keyword, 'star trek');
   assert.deepEqual(zp.upcoming, [{ number: '2', shipdate: '2026-12-02' }, { number: '3', shipdate: '2027-01-06' }]);
+  assert.equal(zp.key, 'id:177482'); assert.equal(zp.nameKey, 'star trek zero point|2026');
+  assert.equal(got[3].key, 'name:star trek lower decks|2027');
 
   const states = Object.fromEntries(classify(got, {
     tracked: new Map([[177149, 12]]),
     handled: new Map([[900, { status: 'skipped' }], [902, { status: 'added' }], [177149, { status: 'added' }]]),
+    skippedKeys: new Set([nameKeyOf('Star Trek: Not For Me', '2027')]),
   }).map((m) => [m.series, m.state]));
   assert.deepEqual(states, {
     'Star Trek: Zero Point': 'new',
     'Star Trek': 'library',
     'Star Trek: Defiant': 'new',
     'Star Trek: Lower Decks': 'waiting',
+    'Star Trek: Not For Me': 'skipped',
     'Star Trek: Old One': 'removed',
     'Star Trek: Year Five': 'skipped',
   });
+});
+
+test('a "new series only" rule catches a series whose first issue is on the list or just shipped', () => {
+  const weeks = [
+    week([rel('Batman: Fresh Start', { comicid: 30, issue: '1', shipdate: '2026-11-04' }), rel('Batman: Long Gone', { comicid: 40, issue: '1', shipdate: '2026-11-04' })], true),
+    week([
+      rel('Batman', { comicid: 10, issue: '16', publisher: 'DC Comics' }),
+      rel('Batman: Year Zero', { comicid: 20, issue: '1' }),
+      rel('Batman: Fresh Start', { comicid: 30, issue: '2' }),
+      rel('Batman Annual', { comicid: null, issue: '1', seriesyear: '2027' }),
+    ]),
+  ];
+  const fresh = rule('batman', { newOnly: true });
+  assert.deepEqual(collect([fresh], weeks).map((m) => m.series).sort(), ['Batman Annual', 'Batman: Fresh Start', 'Batman: Year Zero'],
+    'issue 16 is left out, a first issue in a past week counts, a series only in past weeks is not caught');
+  const fs2 = collect([fresh], weeks).find((m) => m.cvId === 30);
+  assert.equal(fs2.number, '2', 'the issue shown is the next one to ship, not the one that already did');
+
+  // The next rule down may still own what a "new only" rule passed over.
+  const any = { ...rule('batman', { publisher: 'DC' }), id: 2 };
+  const both = collect([fresh, any], weeks);
+  assert.equal(both.find((m) => m.cvId === 10).ruleId, 2);
+  assert.equal(both.find((m) => m.cvId === 20).ruleId, 1);
+});
+
+test('a series caught earlier is followed into past weeks, a stranger there is not', () => {
+  const weeks = [
+    week([rel('Star Trek: One Shot', { comicid: 77, issue: '1', shipdate: '2026-11-04' }), rel('Star Trek: Stranger', { comicid: 78, issue: '1', shipdate: '2026-11-04' })], true),
+    week([rel('Batman', { comicid: 5 })]),
+  ];
+  assert.deepEqual(collect([rule('star trek')], weeks), []);
+  const got = collect([rule('star trek', { newOnly: true })], weeks, { pending: new Set([nameKeyOf('Star Trek: One Shot', '2026')]) });
+  assert.deepEqual(got.map((m) => m.series), ['Star Trek: One Shot']);
+  assert.equal(got[0].number, '1'); assert.equal(got[0].shipdate, '2026-11-04');
 });
 
 test('alreadyOut keeps the issues numbered below the first one still to ship', () => {
@@ -101,13 +143,31 @@ test('alreadyOut keeps the issues numbered below the first one still to ship', (
   assert.deepEqual(nums(alreadyOut(issues, [], '2026-11-18')), ['1', '2', '3', 'Annual']);
 });
 
-test('store: rules round-trip, and the record of handled series', () => {
+test('pickExisting applies the rule to catalog series and leaves out what is in the library', () => {
+  const volumes = [
+    { id: 1, name: 'Star Trek', publisher: { name: 'Western Publishing' }, start_year: '1967', count_of_issues: 61 },
+    { id: 2, name: 'Star Trek', publisher: 'Marvel', start_year: '1980', count_of_issues: 18 },
+    { id: 3, name: 'Star Trek Omnibus', publisher: 'IDW Publishing', start_year: 2009, count_of_issues: 2 },
+    { id: 4, name: 'Stargate', publisher: 'Avatar', start_year: '2003', count_of_issues: 3 },
+    { id: 5, name: 'Star Trek: Voyager', publisher: 'Marvel', start_year: '1996', count_of_issues: 15 },
+    { id: 2, name: 'Star Trek', publisher: 'Marvel', start_year: '1980', count_of_issues: 18 },
+    { id: 6, name: 'Star Trek: Deep Space Nine', publisher: null, start_year: null, count_of_issues: null },
+  ];
+  const got = pickExisting(rule('star trek'), volumes, new Set([5]));
+  assert.deepEqual(got.map((v) => v.cvId), [2, 1, 6], 'newest first, no omnibus, no duplicate, nothing from the library');
+  assert.deepEqual(got[1], { cvId: 1, series: 'Star Trek', publisher: 'Western Publishing', seriesYear: '1967', issues: 61 });
+  assert.deepEqual(pickExisting(rule('star trek', { publisher: 'marvel', skipCollected: false }), volumes).map((v) => v.cvId), [5, 2]);
+  assert.deepEqual(pickExisting(rule('star trek', { skipCollected: false, exclude: 'voyager' }), volumes).map((v) => v.cvId), [3, 2, 1, 6]);
+});
+
+test('store: rules round-trip, the record of handled series, and series waiting by name', () => {
   const { store, rm } = tmpStore();
   try {
-    const a = store.createRule(cleanRule({ keyword: 'Star Trek', publisher: 'IDW' }).rule, 'admin');
-    assert.equal(a.keyword, 'Star Trek'); assert.equal(a.enabled, true); assert.equal(a.createdBy, 'admin');
+    const a = store.createRule(cleanRule({ keyword: 'Star Trek', publisher: 'IDW', newOnly: true }).rule, 'admin');
+    assert.equal(a.keyword, 'Star Trek'); assert.equal(a.enabled, true); assert.equal(a.createdBy, 'admin'); assert.equal(a.newOnly, true);
     assert.equal(store.updateRule(a.id, { enabled: false }).enabled, false);
-    assert.equal(store.updateRule(a.id, { scope: 'new' }).scope, 'new');
+    assert.equal(store.updateRule(a.id, { scope: 'new', newOnly: false }).scope, 'new');
+    assert.equal(store.rule(a.id).newOnly, false);
     assert.equal(store.updateRule(999, { enabled: true }), null);
 
     store.record('added', { cvId: 177482, series: 'Star Trek: Zero Point', keyword: 'Star Trek', ruleId: a.id, number: '2', shipdate: '2026-12-02' }, 31);
@@ -118,6 +178,20 @@ test('store: rules round-trip, and the record of handled series', () => {
     assert.equal(store.forget(900), true);
     assert.equal(store.handled().has(900), false);
 
+    const m = { nameKey: 'star trek lower decks|2027', series: 'Star Trek: Lower Decks', seriesYear: '2027', keyword: 'Star Trek', number: '1', shipdate: '2027-01-06' };
+    assert.equal(store.pend(m), true, 'first sighting');
+    assert.equal(store.pend(m), false, 'seen before');
+    assert.deepEqual([...store.pendingKeys()], [m.nameKey]);
+    assert.equal(store.skippedKeys().size, 0);
+    store.skipPending(m, true);
+    assert.deepEqual([...store.skippedKeys()], [m.nameKey]);
+    assert.equal(store.unskipPending(m.nameKey), true);
+    assert.equal(store.skippedKeys().size, 0);
+    assert.equal(store.pendingKeys().size, 1, 'still waiting, so it is not announced a second time');
+    assert.equal(store.prunePending(), 0);
+    assert.equal(store.prunePending(120, Date.now() + 121 * 86400000), 1, 'old enough to let go');
+    assert.equal(store.unpend(m.nameKey), false);
+
     store.setMeta('lastRun', { added: [1] });
     assert.deepEqual(store.getMeta('lastRun'), { added: [1] });
     assert.equal(store.deleteRule(a.id), true);
@@ -126,11 +200,12 @@ test('store: rules round-trip, and the record of handled series', () => {
   } finally { rm(); }
 });
 
-// A release list for two weeks and a clock fixed on the first of them.
-function fakeFeed(byWeek, { ahead = 1 } = {}) {
+// A release list whose weeks are numbers, and a clock fixed on week 48.
+// `byWeek` may be changed between passes to play the list moving on.
+function fakeFeed(byWeek, { ahead = 1, back = 0 } = {}) {
   const calls = [];
   const feed = makeFeed({
-    ahead,
+    ahead, back, ttlMs: 0,
     currentWeek: () => ({ week: '48', year: '2026' }),
     shiftWeek: (w, y, d) => ({ week: String(Number(w) + d), year: y }),
     load: async (w) => {
@@ -142,15 +217,20 @@ function fakeFeed(byWeek, { ahead = 1 } = {}) {
   return { feed, calls };
 }
 
-test('the feed reads this week and the weeks ahead once, then serves from memory', async () => {
-  const { feed, calls } = fakeFeed({ 48: [rel('A')], 49: 'down' });
+test('the feed reads the weeks behind, this week and the weeks ahead, and marks the ones gone by', async () => {
+  const { feed, calls } = fakeFeed({ 47: [rel('Old')], 48: [rel('A')], 49: 'down' }, { back: 1 });
   const first = await feed.weeks();
-  assert.equal(first.weeks.length, 1); assert.equal(first.failed, 1);
-  await feed.weeks();
-  assert.deepEqual(calls, ['48', '49']);
-  await feed.weeks({ fresh: true });
-  assert.equal(calls.length, 4);
-  await assert.rejects(fakeFeed({ 48: 'down', 49: 'down' }).feed.weeks(), /release list is unavailable/);
+  assert.deepEqual(calls, ['47', '48', '49']);
+  assert.deepEqual(first.weeks.map((w) => [w.week, w.past]), [['47', true], ['48', false]]);
+  assert.equal(first.failed, 1);
+  await assert.rejects(fakeFeed({ 47: [rel('Old')], 48: 'down', 49: 'down' }, { back: 1 }).feed.weeks(), /release list is unavailable/);
+
+  // Served from memory while fresh.
+  const kept = makeFeed({ ahead: 0, back: 0, currentWeek: () => ({ week: '48', year: '2026' }), shiftWeek: () => ({}), load: async (w) => { calls.push('kept'); return { ...w, releases: [] }; } });
+  await kept.weeks(); await kept.weeks();
+  assert.equal(calls.filter((c) => c === 'kept').length, 1);
+  await kept.weeks({ fresh: true });
+  assert.equal(calls.filter((c) => c === 'kept').length, 2);
 });
 
 test('a pass adds what is new once, leaves the rest, and tries a failed add again', async () => {
@@ -162,7 +242,7 @@ test('a pass adds what is new once, leaves the rest, and tries a failed add agai
       49: [rel('Star Trek: Lower Decks', { comicid: null }), rel('Star Trek: Broken', { comicid: 666 })],
     });
     const library = new Map([[177149, 12]]); // Star Trek is already in the library
-    const added = []; const told = [];
+    const added = []; const told = []; const coming = [];
     let brokenFor = 1;
     const scanner = makeScanner({
       store, feed,
@@ -174,11 +254,13 @@ test('a pass adds what is new once, leaves the rest, and tries a failed add agai
         return { seriesId, queued: 1 };
       },
       onAdded: (d) => told.push(d.series),
+      onWaiting: (m) => coming.push(m.series),
     });
 
     const one = await scanner.run();
     assert.deepEqual(added, ['Star Trek: Zero Point']);
     assert.deepEqual(told, ['Star Trek: Zero Point']);
+    assert.deepEqual(coming, ['Star Trek: Lower Decks'], 'the series still waiting is announced');
     assert.equal(one.waiting, 1);
     assert.equal(one.failed.length, 1);
     assert.equal(one.added[0].seriesId, 100);
@@ -188,17 +270,65 @@ test('a pass adds what is new once, leaves the rest, and tries a failed add agai
     const two = await scanner.run();
     assert.deepEqual(added, ['Star Trek: Zero Point', 'Star Trek: Broken'], 'the failed one is tried again, nothing is added twice');
     assert.equal(two.added.length, 1);
+    assert.deepEqual(coming, ['Star Trek: Lower Decks'], 'and it is announced once only');
 
     // Deleted from the library afterwards: it does not come back.
     library.delete(177482);
     const three = await scanner.run();
     assert.equal(three.added.length, 0);
-    const { matches } = await matchesFor(store.rules(), { feed, tracked: () => new Map(library), handled: () => store.handled() });
+    const { matches } = await matchesFor(store.rules(), { feed, tracked: () => new Map(library), store });
     assert.equal(matches.find((m) => m.cvId === 177482).state, 'removed');
 
     // Unless it is taken off the record.
     store.forget(177482);
     assert.equal((await scanner.run()).added.length, 1);
+  } finally { rm(); }
+});
+
+test('a series caught while waiting is added when its id arrives, even after it has shipped', async () => {
+  const { store, rm } = tmpStore();
+  try {
+    store.createRule(cleanRule({ keyword: 'star trek', newOnly: true }).rule);
+    const byWeek = { 48: [rel('Star Trek: One Shot', { comicid: null, issue: '1', shipdate: '2026-11-25' })] };
+    const { feed } = fakeFeed(byWeek, { ahead: 1, back: 1 });
+    const library = new Map(); const added = []; const coming = [];
+    const scanner = makeScanner({
+      store, feed, tracked: () => new Map(library),
+      add: async (m) => { library.set(m.cvId, 7); added.push([m.series, m.upcoming.length]); return { seriesId: 7 }; },
+      onWaiting: (m) => coming.push(m.series),
+    });
+    assert.equal((await scanner.run()).waiting, 1);
+    assert.deepEqual(coming, ['Star Trek: One Shot']);
+    assert.equal(store.pendingKeys().size, 1);
+
+    // A week on: it has shipped, sits in a week gone by, and now has its id.
+    delete byWeek[48];
+    byWeek[47] = [rel('Star Trek: One Shot', { comicid: 555, issue: '1', shipdate: '2026-11-25' }), rel('Star Trek: Stranger', { comicid: 556, issue: '1', shipdate: '2026-11-25' })];
+    const later = await scanner.run();
+    assert.deepEqual(added, [['Star Trek: One Shot', 1]], 'the one that was waiting is added, a stranger in a past week is not');
+    assert.equal(later.added[0].cvId, 555);
+    assert.equal(store.pendingKeys().size, 0, 'no longer waiting');
+    assert.equal(store.handled().get(555).status, 'added');
+  } finally { rm(); }
+});
+
+test('a series skipped while waiting stays out once its id arrives', async () => {
+  const { store, rm } = tmpStore();
+  try {
+    store.createRule(cleanRule({ keyword: 'star trek' }).rule);
+    const byWeek = { 48: [rel('Star Trek: Not For Me', { comicid: null })] };
+    const { feed } = fakeFeed(byWeek);
+    const scanner = makeScanner({ store, feed, tracked: () => new Map(), add: async () => { throw new Error('must not add'); } });
+    await scanner.run();
+    const { matches } = await matchesFor(store.rules(), { feed, tracked: () => new Map(), store });
+    assert.equal(matches[0].state, 'waiting');
+    store.skipPending(matches[0], true);
+
+    byWeek[48] = [rel('Star Trek: Not For Me', { comicid: 321 })];
+    const out = await scanner.run();
+    assert.equal(out.added.length, 0); assert.equal(out.failed.length, 0);
+    assert.equal(store.handled().get(321).status, 'skipped', 'the skip moves from the name to the id');
+    assert.equal(store.pendingKeys().size, 0);
   } finally { rm(); }
 });
 

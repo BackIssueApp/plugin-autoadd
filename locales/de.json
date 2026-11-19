@@ -4,7 +4,9 @@
     "gone": "Diese Serie wartet nicht mehr darauf, hinzugefügt zu werden."
   },
   "match": {
+    "shipped": "Nr. {number} erschien am {date}",
     "ships": "Nr. {number} erscheint am {date}",
+    "shippedNoNumber": "Erschien am {date}",
     "shipsNoNumber": "Erscheint am {date}",
     "rule": "Regel: {keyword}"
   },
@@ -18,6 +20,7 @@
   "rule": {
     "publisher": "Verlag: {publisher}",
     "exclude": "Ohne: {words}",
+    "newOnly": "Nur neue Serien",
     "noCollected": "Nur Einzelhefte",
     "withCollected": "Auch Sammelbände",
     "scopeNew": "Ab dem nächsten Heft",
@@ -30,6 +33,52 @@
     "deleteConfirm": "Die Regel „{keyword}“ löschen? Serien, die sie schon hinzugefügt hat, bleiben in deiner Bibliothek.",
     "deleted": "Regel gelöscht",
     "heading": "Regeln"
+  },
+  "existing": {
+    "title": "Bereits erschienene Serien, die diese Regel erfasst",
+    "hide": "Ausblenden",
+    "button": "Vorhandene Serien",
+    "loading": "Der Katalog wird durchsucht…",
+    "failed": "Der Katalog konnte nicht durchsucht werden: {error}",
+    "none": "Außer den Serien in deiner Bibliothek passt keine bereits erschienene Serie zu dieser Regel.",
+    "count": {
+      "one": "{count} bereits erschienene Serie passt zu dieser Regel und ist nicht in deiner Bibliothek.",
+      "other": "{count} bereits erschienene Serien passen zu dieser Regel und sind nicht in deiner Bibliothek."
+    },
+    "selectNone": "Nichts auswählen",
+    "selectAll": "Alle auswählen",
+    "issues": {
+      "one": "{count} Heft",
+      "other": "{count} Hefte"
+    },
+    "add": {
+      "one": "{count} Serie hinzufügen",
+      "other": "{count} Serien hinzufügen"
+    },
+    "adding": "{done} von {total} werden hinzugefügt…",
+    "confirm": {
+      "one": "{count} Serie hinzufügen? Jedes Heft davon wird gesucht.",
+      "other": "{count} Serien hinzufügen? Jedes Heft jeder Serie wird gesucht."
+    },
+    "someFailed": {
+      "one": "{count} Serie konnte nicht hinzugefügt werden.",
+      "other": "{count} Serien konnten nicht hinzugefügt werden."
+    }
+  },
+  "run": {
+    "added": {
+      "one": "{count} Serie hinzugefügt",
+      "other": "{count} Serien hinzugefügt"
+    },
+    "last": "Zuletzt geprüft: {date}",
+    "never": "Noch nicht geprüft",
+    "running": "Wird geprüft…",
+    "failed": {
+      "one": "{count} Serie konnte nicht hinzugefügt werden. Beim nächsten Prüfen wird es erneut versucht.",
+      "other": "{count} Serien konnten nicht hinzugefügt werden. Beim nächsten Prüfen wird es erneut versucht."
+    },
+    "nothing": "Nichts Neues hinzuzufügen",
+    "now": "Jetzt prüfen"
   },
   "preview": {
     "loading": "Die kommenden Wochen werden gelesen…",
@@ -50,6 +99,7 @@
     "scope": "Herunterladen",
     "scopeAll": "Jedes Heft der Serie",
     "scopeNew": "Nur das nächste Heft und spätere",
+    "newOnly": "Nur neue Serien (Serien auslassen, die schon über ihr erstes Heft hinaus sind)",
     "collected": "Nur Einzelhefte (ohne Paperbacks, Hardcover und Omnibus-Ausgaben)",
     "save": "Regel speichern"
   },
@@ -69,25 +119,10 @@
     "addedOn": "Hinzugefügt am {date}",
     "heading": "Bisher hinzugefügt"
   },
-  "run": {
-    "last": "Zuletzt geprüft: {date}",
-    "never": "Noch nicht geprüft",
-    "running": "Wird geprüft…",
-    "added": {
-      "one": "{count} Serie hinzugefügt",
-      "other": "{count} Serien hinzugefügt"
-    },
-    "failed": {
-      "one": "{count} Serie konnte nicht hinzugefügt werden. Beim nächsten Prüfen wird es erneut versucht.",
-      "other": "{count} Serien konnten nicht hinzugefügt werden. Beim nächsten Prüfen wird es erneut versucht."
-    },
-    "nothing": "Nichts Neues hinzuzufügen",
-    "now": "Jetzt prüfen"
-  },
   "page": {
     "title": "Auto-Hinzufügen",
     "close": "Schließen (Esc)",
-    "lead": "Eine Regel fügt eine Serie deiner Bibliothek hinzu, sobald sie auf der Liste der Neuerscheinungen steht, bis zu {weeks} Wochen bevor ihr erstes Heft erscheint. Danach wird die Serie überwacht wie eine, die du selbst hinzugefügt hast."
+    "lead": "Eine Regel beobachtet die Liste der Neuerscheinungen, die {weeks} Wochen vorausreicht, und meldet sich, sobald sie eine Serie erfasst. Die Serie wird deiner Bibliothek hinzugefügt, wenn ihre Angaben vorliegen, bei einer ganz neuen Serie meist um die Woche, in der ihr erstes Heft erscheint. Danach wird sie überwacht wie eine, die du selbst hinzugefügt hast."
   },
   "menu": {
     "label": "Auto-Hinzufügen",
@@ -96,7 +131,7 @@
   "_shared": {
     "plugins": {
       "autoadd": {
-        "description": "Stichwortregeln, die kommende Serien automatisch zur Bibliothek hinzufügen, bis zu acht Wochen bevor das erste Heft erscheint"
+        "description": "Stichwortregeln, die die Liste der Neuerscheinungen bis zu acht Wochen im Voraus beobachten und passende Serien automatisch zur Bibliothek hinzufügen"
       }
     },
     "permissions": {
@@ -113,6 +148,10 @@
       }
     },
     "notifications": {
+      "autoaddWaiting": {
+        "title": "Demnächst: {title}",
+        "body": "Sie erscheint am {date} und passt zu deiner Regel „{keyword}“. Sie wird hinzugefügt, sobald ihre Angaben vorliegen."
+      },
       "autoaddAdded": {
         "title": "{title} hinzugefügt",
         "body": "Sie passt zu deiner Regel „{keyword}“."

@@ -48,12 +48,14 @@ export function cleanRule(input = {}) {
       publisher,
       exclude: exclude.join(', '),
       skipCollected: input.skipCollected === undefined ? true : !!input.skipCollected,
+      newOnly: !!input.newOnly,
       scope: SCOPES.includes(input.scope) ? input.scope : 'all',
     },
   };
 }
 
-// Does this rule catch that release-list entry?
+// Does this rule catch that release-list entry? (Whether the series is new
+// is a question about the series, not one entry: see collect.)
 export function ruleMatches(rule, rel) {
   const name = normalize(rel?.series);
   if (!name || !hasPhrase(name, normalize(rule.keyword))) return false;
@@ -64,46 +66,71 @@ export function ruleMatches(rule, rel) {
 }
 
 const day = (v) => (/^\d{4}-\d{2}-\d{2}/.test(String(v ?? '')) ? String(v).slice(0, 10) : null);
+const isFirstIssue = (number) => { const n = parseFloat(number); return Number.isFinite(n) && n <= 1; };
+
+// What a series is called on the list, whether or not the list has a catalog
+// id for it yet. This is how a series caught early is recognised again later.
+export const nameKeyOf = (series, year) => normalize(series) + '|' + (year ?? '');
 
 // Every series the rules catch across the given weeks, one row per series,
-// carrying the first issue of it that shows up (the weeks arrive oldest
-// first). The first rule that catches a series owns it. A series the list
-// has no catalog id for yet is kept, keyed by name and start year, so the
-// page can say it is waiting.
-export function collect(rules, weeks) {
+// carrying the next issue of it to ship. Weeks arrive oldest first; a week
+// marked `past` has already gone by and is only read to follow up on a
+// series that was caught earlier and is still waiting (`pending`, a set of
+// name keys): a series seen only in past weeks is otherwise not caught.
+//
+// The first rule that catches a series owns it. A "new series only" rule
+// catches a series when its first issue is among the weeks read, or when it
+// was already waiting. A series the list has no catalog id for yet is kept,
+// keyed by name and start year, so the page can say it is waiting.
+export function collect(rules, weeks, { pending = new Set() } = {}) {
   const active = (rules || []).filter((r) => r.enabled !== false && r.enabled !== 0);
-  const out = new Map();
+  const rows = new Map();
   for (const w of weeks || []) {
     for (const rel of w?.releases || []) {
-      const rule = active.find((r) => ruleMatches(r, rel));
-      if (!rule) continue;
+      const catching = active.filter((r) => ruleMatches(r, rel));
+      if (!catching.length) continue;
       const cvId = Number(rel.comicid) || null;
-      const key = cvId ? 'id:' + cvId : 'name:' + normalize(rel.series) + '|' + (rel.seriesyear ?? '');
+      const nameKey = nameKeyOf(rel.series, rel.seriesyear);
+      const key = cvId ? 'id:' + cvId : 'name:' + nameKey;
       const ship = day(rel.shipdate);
-      const seen = out.get(key);
-      if (seen) {
-        seen.issues++;
-        seen.upcoming.push({ number: rel.issue ?? null, shipdate: ship });
-        if (ship && (!seen.shipdate || ship < seen.shipdate)) { seen.shipdate = ship; seen.number = rel.issue ?? seen.number; }
-        continue;
+      const number = rel.issue != null && String(rel.issue) !== '' ? String(rel.issue) : null;
+      let row = rows.get(key);
+      if (!row) {
+        row = {
+          key, nameKey, cvId,
+          series: String(rel.series || '').trim(),
+          publisher: rel.publisher ? String(rel.publisher).trim() : null,
+          seriesYear: rel.seriesyear != null && String(rel.seriesyear) !== '' ? String(rel.seriesyear) : null,
+          type: rel.type ? String(rel.type).trim() : null,
+          number: null, shipdate: null,
+          issues: 0, upcoming: [],
+          ahead: false, first: false, catching,
+        };
+        rows.set(key, row);
       }
-      out.set(key, {
-        key, cvId,
-        series: String(rel.series || '').trim(),
-        publisher: rel.publisher ? String(rel.publisher).trim() : null,
-        seriesYear: rel.seriesyear != null && String(rel.seriesyear) !== '' ? String(rel.seriesyear) : null,
-        type: rel.type ? String(rel.type).trim() : null,
-        number: rel.issue != null && String(rel.issue) !== '' ? String(rel.issue) : null,
-        shipdate: ship,
-        issues: 1,
-        upcoming: [{ number: rel.issue ?? null, shipdate: ship }],
-        ruleId: rule.id ?? null,
-        keyword: rule.keyword,
-        scope: rule.scope || 'all',
-      });
+      row.issues++;
+      row.upcoming.push({ number, shipdate: ship });
+      if (isFirstIssue(number)) row.first = true;
+      // The issue shown (and the one a "from the upcoming issue" rule starts
+      // at) is the earliest still on this week's list or later; a series only
+      // seen in past weeks falls back to its earliest issue there.
+      const better = !row.shipdate || (ship && ship < row.shipdate);
+      if (!w.past) {
+        if (!row.ahead || better) { row.number = number; row.shipdate = ship; }
+        row.ahead = true;
+      } else if (!row.ahead && (row.number == null || better)) { row.number = number; row.shipdate = ship; }
     }
   }
-  return [...out.values()].sort((a, b) =>
+  const out = [];
+  for (const row of rows.values()) {
+    const waiting = pending.has(row.nameKey);
+    if (!row.ahead && !waiting) continue;
+    const rule = row.catching.find((r) => !r.newOnly || row.first || waiting);
+    if (!rule) continue;
+    const { catching, ...rest } = row;
+    out.push({ ...rest, ruleId: rule.id ?? null, keyword: rule.keyword, scope: rule.scope || 'all' });
+  }
+  return out.sort((a, b) =>
     String(a.shipdate || '9999').localeCompare(String(b.shipdate || '9999')) || a.series.localeCompare(b.series));
 }
 
@@ -114,14 +141,15 @@ export function collect(rules, weeks) {
 //   removed  a rule added it before and it was deleted since; never added twice
 //   new      will be added on the next run
 // `tracked` maps catalog id to library series id; `handled` maps catalog id to
-// the plugin's own record of it ({ status: 'added' | 'skipped' }).
-export function classify(matches, { tracked = new Map(), handled = new Map() } = {}) {
+// the plugin's own record of it ({ status: 'added' | 'skipped' }); `skippedKeys`
+// holds the name keys of series skipped while they were still waiting.
+export function classify(matches, { tracked = new Map(), handled = new Map(), skippedKeys = new Set() } = {}) {
   return matches.map((m) => {
     const h = m.cvId ? handled.get(m.cvId) : null;
     const seriesId = m.cvId ? tracked.get(m.cvId) ?? null : null;
     let state = 'new';
-    if (!m.cvId) state = 'waiting';
-    else if (h?.status === 'skipped') state = 'skipped';
+    if (h?.status === 'skipped' || skippedKeys.has(m.nameKey)) state = 'skipped';
+    else if (!m.cvId) state = 'waiting';
     else if (seriesId != null) state = 'library';
     else if (h?.status === 'added') state = 'removed';
     return { ...m, state, seriesId };
@@ -139,4 +167,30 @@ export function alreadyOut(issues, upcoming, today) {
   if (!ahead.length) return [...issues];
   const first = Math.min(...ahead);
   return issues.filter((i) => { const n = parseFloat(i.issue_number); return !Number.isFinite(n) || n < first; });
+}
+
+// The catalog's existing series a rule would have caught: the same name,
+// publisher and left-out-words tests, minus what is already in the library.
+// The catalog has no format field, so "single issues only" goes by the name.
+// `volumes` are { id, name, publisher, start_year, count_of_issues } (the
+// publisher may be an object with a name); newest first.
+export function pickExisting(rule, volumes, trackedIds = new Set()) {
+  const seen = new Set();
+  const out = [];
+  for (const v of volumes || []) {
+    const id = Number(v?.id);
+    if (!id || seen.has(id) || trackedIds.has(id)) continue;
+    const publisher = v.publisher && typeof v.publisher === 'object' ? v.publisher.name : v.publisher;
+    if (!ruleMatches({ ...rule, skipCollected: false }, { series: v.name, publisher })) continue;
+    if (rule.skipCollected && isCollected(v.name)) continue;
+    seen.add(id);
+    out.push({
+      cvId: id,
+      series: String(v.name || '').trim(),
+      publisher: publisher ? String(publisher).trim() : null,
+      seriesYear: v.start_year != null && String(v.start_year) !== '' ? String(v.start_year) : null,
+      issues: Number(v.count_of_issues) || 0,
+    });
+  }
+  return out.sort((a, b) => String(b.seriesYear || '').localeCompare(String(a.seriesYear || '')) || a.series.localeCompare(b.series));
 }

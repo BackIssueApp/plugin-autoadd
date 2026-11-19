@@ -4,7 +4,9 @@
     "gone": "该系列已不在待添加之列。"
   },
   "match": {
+    "shipped": "第 {number} 期已于 {date} 发售",
     "ships": "第 {number} 期将于 {date} 发售",
+    "shippedNoNumber": "已于 {date} 发售",
     "shipsNoNumber": "将于 {date} 发售",
     "rule": "规则：{keyword}"
   },
@@ -18,6 +20,7 @@
   "rule": {
     "publisher": "出版商：{publisher}",
     "exclude": "排除：{words}",
+    "newOnly": "仅新系列",
     "noCollected": "仅单期",
     "withCollected": "包含合订本",
     "scopeNew": "从下一期开始",
@@ -30,6 +33,45 @@
     "deleteConfirm": "删除规则“{keyword}”？它已添加的系列仍会保留在书库中。",
     "deleted": "规则已删除",
     "heading": "规则"
+  },
+  "existing": {
+    "title": "此规则匹配到的已出版系列",
+    "hide": "隐藏",
+    "button": "已有系列",
+    "loading": "正在搜索目录…",
+    "failed": "无法搜索目录：{error}",
+    "none": "除书库中已有的系列外，没有已出版的系列与此规则匹配。",
+    "count": {
+      "other": "有 {count} 个已出版的系列与此规则匹配且不在书库中。"
+    },
+    "selectNone": "取消全选",
+    "selectAll": "全选",
+    "issues": {
+      "other": "{count} 期"
+    },
+    "add": {
+      "other": "添加 {count} 个系列"
+    },
+    "adding": "正在添加第 {done} 个，共 {total} 个…",
+    "confirm": {
+      "other": "添加 {count} 个系列？每个系列的所有期刊都会被列为想要。"
+    },
+    "someFailed": {
+      "other": "有 {count} 个系列未能添加。"
+    }
+  },
+  "run": {
+    "added": {
+      "other": "已添加 {count} 个系列"
+    },
+    "last": "上次检查：{date}",
+    "never": "尚未检查",
+    "running": "正在检查…",
+    "failed": {
+      "other": "有 {count} 个系列未能添加，下次检查时会重试。"
+    },
+    "nothing": "没有新内容可添加",
+    "now": "立即检查"
   },
   "preview": {
     "loading": "正在查看未来几周…",
@@ -49,6 +91,7 @@
     "scope": "下载",
     "scopeAll": "该系列的所有期刊",
     "scopeNew": "仅下一期及之后",
+    "newOnly": "仅新系列（排除已过第一期的系列）",
     "collected": "仅单期（跳过平装合订本、精装本和总集）",
     "save": "保存规则"
   },
@@ -68,23 +111,10 @@
     "addedOn": "添加于 {date}",
     "heading": "已添加的系列"
   },
-  "run": {
-    "last": "上次检查：{date}",
-    "never": "尚未检查",
-    "running": "正在检查…",
-    "added": {
-      "other": "已添加 {count} 个系列"
-    },
-    "failed": {
-      "other": "有 {count} 个系列未能添加，下次检查时会重试。"
-    },
-    "nothing": "没有新内容可添加",
-    "now": "立即检查"
-  },
   "page": {
     "title": "自动添加",
     "close": "关闭 (Esc)",
-    "lead": "系列一出现在新刊列表中，规则就会把它添加到书库，最早可在第一期发售前 {weeks} 周。之后该系列会像你手动添加的系列一样受到监控。"
+    "lead": "规则会留意覆盖未来 {weeks} 周的新刊列表，一旦匹配到系列就通知你。系列会在资料齐备后添加到书库，全新系列通常是在第一期发售的那一周前后。之后它会像你手动添加的系列一样受到监控。"
   },
   "menu": {
     "label": "自动添加",
@@ -93,7 +123,7 @@
   "_shared": {
     "plugins": {
       "autoadd": {
-        "description": "按关键词设置规则，自动将即将推出的系列添加到书库，最早可在第一期发售前八周"
+        "description": "按关键词设置规则，提前最多八周留意新刊列表，并自动将匹配的系列添加到书库"
       }
     },
     "permissions": {
@@ -110,6 +140,10 @@
       }
     },
     "notifications": {
+      "autoaddWaiting": {
+        "title": "即将推出：{title}",
+        "body": "它将于 {date} 发售，与你的规则“{keyword}”匹配。资料齐备后会立即添加。"
+      },
       "autoaddAdded": {
         "title": "已添加 {title}",
         "body": "它与你的规则“{keyword}”匹配。"

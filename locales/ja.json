@@ -4,7 +4,9 @@
     "gone": "そのシリーズはもう追加待ちではありません。"
   },
   "match": {
+    "shipped": "第{number}号 {date}発売済み",
     "ships": "第{number}号 {date}発売",
+    "shippedNoNumber": "{date}発売済み",
     "shipsNoNumber": "{date}発売",
     "rule": "ルール：{keyword}"
   },
@@ -18,6 +20,7 @@
   "rule": {
     "publisher": "出版社：{publisher}",
     "exclude": "除外：{words}",
+    "newOnly": "新シリーズのみ",
     "noCollected": "単号のみ",
     "withCollected": "単行本も含む",
     "scopeNew": "次の号から",
@@ -30,6 +33,45 @@
     "deleteConfirm": "ルール「{keyword}」を削除しますか？ すでに追加されたシリーズはライブラリに残ります。",
     "deleted": "ルールを削除しました",
     "heading": "ルール"
+  },
+  "existing": {
+    "title": "このルールに一致する既刊シリーズ",
+    "hide": "隠す",
+    "button": "既存のシリーズ",
+    "loading": "カタログを検索中…",
+    "failed": "カタログを検索できませんでした：{error}",
+    "none": "ライブラリにあるものを除き、このルールに一致する既刊シリーズはありません。",
+    "count": {
+      "other": "このルールに一致し、ライブラリにない既刊シリーズが{count}件あります。"
+    },
+    "selectNone": "選択を解除",
+    "selectAll": "すべて選択",
+    "issues": {
+      "other": "{count}号"
+    },
+    "add": {
+      "other": "{count}シリーズを追加"
+    },
+    "adding": "{total}件中{done}件を追加中…",
+    "confirm": {
+      "other": "{count}シリーズを追加しますか？ それぞれのすべての号が取得対象になります。"
+    },
+    "someFailed": {
+      "other": "{count}シリーズを追加できませんでした。"
+    }
+  },
+  "run": {
+    "added": {
+      "other": "{count}シリーズを追加しました"
+    },
+    "last": "最終確認：{date}",
+    "never": "未確認",
+    "running": "確認中…",
+    "failed": {
+      "other": "{count}シリーズを追加できませんでした。次回の確認で再試行します。"
+    },
+    "nothing": "新しく追加するものはありません",
+    "now": "今すぐ確認"
   },
   "preview": {
     "loading": "今後の数週間を確認中…",
@@ -49,6 +91,7 @@
     "scope": "ダウンロード",
     "scopeAll": "シリーズのすべての号",
     "scopeNew": "次の号とそれ以降のみ",
+    "newOnly": "新シリーズのみ（すでに第1号を過ぎたシリーズを除く）",
     "collected": "単号のみ（ペーパーバック、ハードカバー、オムニバスを除く）",
     "save": "ルールを保存"
   },
@@ -68,23 +111,10 @@
     "addedOn": "{date}に追加",
     "heading": "これまでに追加したシリーズ"
   },
-  "run": {
-    "last": "最終確認：{date}",
-    "never": "未確認",
-    "running": "確認中…",
-    "added": {
-      "other": "{count}シリーズを追加しました"
-    },
-    "failed": {
-      "other": "{count}シリーズを追加できませんでした。次回の確認で再試行します。"
-    },
-    "nothing": "新しく追加するものはありません",
-    "now": "今すぐ確認"
-  },
   "page": {
     "title": "自動追加",
     "close": "閉じる (Esc)",
-    "lead": "ルールは、シリーズが新刊リストに現れるとすぐにライブラリへ追加します。最大で第1号の発売{weeks}週間前です。その後は、自分で追加したシリーズと同じように監視されます。"
+    "lead": "ルールは{weeks}週間先までの新刊リストを監視し、シリーズが一致するとすぐにお知らせします。シリーズは情報が揃った時点でライブラリに追加されます。まったく新しいシリーズの場合は、たいてい第1号の発売週ごろです。その後は、自分で追加したシリーズと同じように監視されます。"
   },
   "menu": {
     "label": "自動追加",
@@ -93,7 +123,7 @@
   "_shared": {
     "plugins": {
       "autoadd": {
-        "description": "キーワードのルールで、今後発売されるシリーズを第1号の発売最大8週間前に自動でライブラリへ追加"
+        "description": "キーワードのルールで新刊リストを最大8週間先まで監視し、一致するシリーズを自動でライブラリへ追加"
       }
     },
     "permissions": {
@@ -110,6 +140,10 @@
       }
     },
     "notifications": {
+      "autoaddWaiting": {
+        "title": "近日発売：{title}",
+        "body": "{date}発売で、ルール「{keyword}」に一致しました。情報が揃いしだい追加されます。"
+      },
       "autoaddAdded": {
         "title": "{title}を追加しました",
         "body": "ルール「{keyword}」に一致しました。"

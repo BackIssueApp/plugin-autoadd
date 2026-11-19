@@ -1,13 +1,16 @@
 // Auto-add plugin for BackIssue: keyword rules that add upcoming series to
 // the library before anyone has heard of them. A rule is a phrase ("star
 // trek"), optionally narrowed by publisher and by words to leave out. Twice a
-// day the weekly release list is read for this week and the eight after it;
-// a series whose name a rule catches, and that is not in the library yet, is
-// added and monitored like any series added by hand. Its issues then
+// day the weekly release list is read for this week and the eight after it.
+// A series whose name a rule catches, and that is not in the library yet, is
+// announced the moment it is caught and added as soon as the catalog has a
+// record for it, then monitored like any series added by hand. Its issues
 // download through the app's own lanes as they ship.
 //
 // A series is added once. Deleting it afterwards does not bring it back, and
-// "Skip" on the page keeps a caught series out before it is added.
+// "Skip" on the page keeps a caught series out before it is added. A rule can
+// also be pointed at the catalog's existing series, to add the back catalogue
+// by hand.
 import Database from 'better-sqlite3';
 import config from '../../src/config.js';
 import { makeCvClient } from '../../src/cv.js';
@@ -18,11 +21,13 @@ import * as notifications from '../../src/notifications.js';
 import * as logstore from '../../src/logstore.js';
 import * as jobs from '../../src/jobs.js';
 import { openStore } from './store.js';
-import { cleanRule, alreadyOut } from './match.js';
+import { cleanRule, alreadyOut, pickExisting } from './match.js';
 import { makeFeed, makeScanner, matchesFor, WEEKS_AHEAD } from './scan.js';
 
 const JOB_ID = 'autoadd-scan';
 const JOB_LABEL = 'Add upcoming series that match a rule';
+const EXISTING_MAX = 1000;  // how many catalog series one rule's back catalogue may list
+const EXISTING_BATCH = 10;  // how many of them one request may add
 
 export default async function register(api) {
   api.registerClientAsset({ js: 'client/ui.js', css: 'client/autoadd.css' });
@@ -62,6 +67,11 @@ export default async function register(api) {
     for (const s of db.prepare('SELECT id, cv_id FROM series WHERE cv_id IS NOT NULL').all()) m.set(s.cv_id, s.id);
     return m;
   };
+  // The catalog, asked through the default library's sources like a manual add.
+  const catalog = (db) => {
+    const lib = coreDb.defaultLibrary?.(db)?.id ?? null;
+    return makeCvClient(config, lib != null ? { libraryId: lib } : {});
+  };
 
   const feed = makeFeed({
     load: (w) => releases.fetchWeeklyReleases(w),
@@ -69,15 +79,13 @@ export default async function register(api) {
     shiftWeek: releases.shiftWeek,
   });
 
-  // Put one caught series in the library: monitored for every issue, or from
-  // the issue that is about to ship when the rule says so. Issues already out
-  // are queued the way a manual add queues them (the "download on add"
-  // setting decides); the ones the release list still has ahead are left to
-  // the app's release-day lanes.
+  // Put one series in the library: monitored for every issue, or from the
+  // issue that is about to ship when the rule says so. Issues already out are
+  // queued the way a manual add queues them (the "download on add" setting
+  // decides); the ones the release list still has ahead are left to the app's
+  // release-day lanes.
   const adder = (db, startDownloads) => async (m) => {
-    const lib = coreDb.defaultLibrary?.(db)?.id ?? null;
-    const client = makeCvClient(config, lib != null ? { libraryId: lib } : {});
-    const r = await addSeriesFromCv(db, client, m.cvId, { monitor: 'all' });
+    const r = await addSeriesFromCv(db, catalog(db), m.cvId, { monitor: 'all' });
     if (r.outcome === 'created' && m.scope === 'new' && m.number != null) {
       try { coreDb.setMonitor(db, r.seriesId, 'new', { from: m.number }); } catch { /* keeps "all" */ }
     }
@@ -95,19 +103,31 @@ export default async function register(api) {
         queued = ids.length;
       } catch (e) { log('warn', `${r.title || m.series} was added, but its released issues could not be queued: ${e?.message || e}`); }
     }
-    return { seriesId: r.seriesId, queued };
+    return { seriesId: r.seriesId, queued, outcome: r.outcome };
   };
 
-  // Tell people what arrived: one note per series for the first few, then one
-  // that counts the rest.
+  // Tell people what a pass did: a note per series for the first few of each
+  // kind, then one that counts the rest of what was added.
   const NOTE_EACH = 5;
   const announcer = (db) => {
-    let told = 0;
+    let added = 0; let waiting = 0;
+    const tell = (event) => { try { notifications.notify?.(db, event); } catch { /* best-effort */ } };
     return {
-      each(done) {
+      // Caught, but the catalog has no record of it yet.
+      waiting(m) {
+        log('info', `Caught ${m.series} (rule "${m.keyword}"): waiting for its catalog record`);
+        if (!m.shipdate || ++waiting > NOTE_EACH) return;
+        tell({
+          type: 'autoadd.waiting', category: 'release', level: 'info',
+          title: `Coming up: ${m.series}`,
+          body: `It ships ${m.shipdate} and matches your rule “${m.keyword}”. It is added as soon as its details are available.`,
+          params: { title: m.series, keyword: m.keyword, date: m.shipdate },
+        });
+      },
+      added(done) {
         log('info', `Added ${done.series} (rule "${done.keyword}")${done.queued ? `, ${done.queued} released issue${done.queued === 1 ? '' : 's'} queued` : ''}`);
-        if (++told > NOTE_EACH) return;
-        notifications.notify?.(db, {
+        if (++added > NOTE_EACH) return;
+        tell({
           type: 'autoadd.added', category: 'release', level: 'success',
           title: `Added ${done.series}`,
           body: `It matches your rule “${done.keyword}”.`,
@@ -117,9 +137,9 @@ export default async function register(api) {
         });
       },
       rest() {
-        if (told <= NOTE_EACH) return;
-        const count = told - NOTE_EACH;
-        notifications.notify?.(db, {
+        if (added <= NOTE_EACH) return;
+        const count = added - NOTE_EACH;
+        tell({
           type: 'autoadd.more', category: 'release', level: 'success',
           title: `${count} more series added`,
           body: 'Auto-add has the full list.',
@@ -135,11 +155,11 @@ export default async function register(api) {
   async function runPass(db, startDownloads) {
     if (scanner?.busy()) return scanner.run();
     const say = announcer(db);
-    scanner = makeScanner({ store, feed, tracked: trackedIn(db), add: adder(db, startDownloads), onAdded: say.each, log });
+    scanner = makeScanner({ store, feed, tracked: trackedIn(db), add: adder(db, startDownloads), onAdded: say.added, onWaiting: say.waiting, log });
     try {
       const summary = await scanner.run();
-      try { say.rest(); } catch { /* best-effort */ }
-      if (summary.added.length || summary.failed.length) log('info', `Auto-add: ${summary.added.length} added, ${summary.failed.length} failed, ${summary.waiting} waiting for a catalog entry`);
+      say.rest();
+      if (summary.added.length || summary.failed.length) log('info', `Auto-add: ${summary.added.length} added, ${summary.failed.length} failed, ${summary.waiting} waiting for a catalog record`);
       return summary;
     } finally { scanner = null; }
   }
@@ -157,12 +177,36 @@ export default async function register(api) {
     run: (ctx) => asJob(JOB_LABEL, () => runPass(ctx?.db || ownDb(), ctx?.startDownloads)),
   });
 
+  // The catalog's existing series whose name a rule catches and that are not
+  // in the library. A name filter on the catalog's series list when the
+  // source has one (it pages, so a long-running title is listed in full);
+  // its plain search otherwise.
+  async function existingFor(rule, db) {
+    const client = catalog(db);
+    let volumes = null;
+    if (typeof client.list === 'function') {
+      try {
+        const name = rule.keyword.replace(/[:|,]+/g, ' ').replace(/\s+/g, ' ').trim();
+        volumes = [];
+        for (let offset = 0; offset < EXISTING_MAX; offset += 100) {
+          const page = await client.list('volumes', { filter: `name:${name}`, fieldList: 'id,name,publisher,start_year,count_of_issues', limit: 100, offset });
+          const got = page?.results || [];
+          volumes.push(...got);
+          if (got.length < 100 || volumes.length >= Number(page?.total ?? Infinity)) break;
+        }
+      } catch (e) { if (e?.rateLimited) throw e; volumes = null; }
+    }
+    if (!volumes) volumes = await client.search(rule.keyword);
+    return pickExisting(rule, volumes, new Set(trackedIn(db)().keys()));
+  }
+
   // ---- routes --------------------------------------------------------------
   const route = (method, path, handler) => api.registerRoute(method, path, async (req, res) => {
     try { await handler(req, res); }
     catch (e) { res.status(500).json({ error: String(e?.message || e) }); }
   }, { access: ACCESS });
-  const lists = () => ({ tracked: trackedIn(ownDb()), handled: () => store.handled() });
+  const caught = (rules) => matchesFor(rules, { feed, tracked: trackedIn(ownDb()), store });
+  const kick = (req) => () => { try { req.app?.locals?.startDownloads?.(); } catch { /* older core: the queue picks them up at its next kick */ } };
 
   // Rules, what they have done so far, and the last pass.
   route('get', '/api/autoadd/state', (req, res) => {
@@ -178,7 +222,7 @@ export default async function register(api) {
 
   // What the saved rules catch in the weeks ahead.
   route('get', '/api/autoadd/matches', async (req, res) => {
-    try { res.json(await matchesFor(store.rules(), { feed, ...lists() })); }
+    try { res.json(await caught(store.rules())); }
     catch (e) { res.json({ matches: [], error: String(e?.message || e) }); }
   });
 
@@ -186,7 +230,7 @@ export default async function register(api) {
   route('post', '/api/autoadd/preview', async (req, res) => {
     const { rule, error } = cleanRule(req.body || {});
     if (error) return res.json({ matches: [], invalid: error });
-    try { res.json(await matchesFor([{ ...rule, id: 0, enabled: true }], { feed, ...lists() })); }
+    try { res.json(await caught([{ ...rule, id: 0, enabled: true }])); }
     catch (e) { res.json({ matches: [], error: String(e?.message || e) }); }
   });
 
@@ -220,30 +264,75 @@ export default async function register(api) {
     res.json({ deleted: store.deleteRule(req.params.id) });
   });
 
-  // "Not this one": keep a caught series out. Looked up in what the rules
-  // catch right now, so only a series a rule really caught can be skipped.
+  // The back catalogue: existing series this rule's name test catches.
+  route('get', '/api/autoadd/rules/:id/existing', async (req, res) => {
+    const rule = store.rule(req.params.id);
+    if (!rule) return res.status(404).json({ error: 'no such rule' });
+    try { res.json({ series: await existingFor(rule, ownDb()) }); }
+    catch (e) { res.json({ series: [], error: e?.rateLimited ? 'the catalog is busy right now, try again shortly' : String(e?.message || e) }); }
+  });
+
+  // Add some of them. A few per request, so the page can show progress and a
+  // long list never holds one request open for minutes.
+  route('post', '/api/autoadd/rules/:id/existing', async (req, res) => {
+    const rule = store.rule(req.params.id);
+    if (!rule) return res.status(404).json({ error: 'no such rule' });
+    const ids = [...new Set((Array.isArray(req.body?.cvIds) ? req.body.cvIds : []).map(Number).filter((n) => Number.isInteger(n) && n > 0))];
+    if (!ids.length || ids.length > EXISTING_BATCH) return res.status(400).json({ error: `between 1 and ${EXISTING_BATCH} series can be added at a time` });
+    const db = ownDb();
+    const add = adder(db, kick(req));
+    // A series that also has issues ahead on the list only gets the ones
+    // already out queued, like any other add.
+    let ahead = new Map();
+    try { ahead = new Map((await caught([{ ...rule, enabled: true }])).matches.filter((m) => m.cvId).map((m) => [m.cvId, m])); } catch { /* the list is down: queue what the catalog has */ }
+    const added = []; const failed = [];
+    for (const cvId of ids) {
+      const m = { cvId, ruleId: rule.id, keyword: rule.keyword, scope: 'all', upcoming: ahead.get(cvId)?.upcoming || [], series: ahead.get(cvId)?.series || null };
+      try {
+        const r = await add(m);
+        const row = db.prepare('SELECT title, publisher, year FROM series WHERE id = ?').get(r.seriesId) || {};
+        store.record('added', { ...m, series: row.title || m.series, publisher: row.publisher || null, seriesYear: row.year || null }, r.seriesId);
+        added.push({ cvId, seriesId: r.seriesId, queued: r.queued });
+        log('info', `Added ${row.title || 'series ' + cvId} from the back catalogue (rule "${rule.keyword}")${r.queued ? `, ${r.queued} issue${r.queued === 1 ? '' : 's'} queued` : ''}`);
+      } catch (e) {
+        failed.push({ cvId, error: String(e?.message || e) });
+        log('warn', `Could not add series ${cvId} from the back catalogue: ${e?.message || e}`);
+        if (e?.rateLimited) break;
+      }
+    }
+    res.json({ added, failed });
+  });
+
+  // "Not this one": keep a caught series out, whether it is about to be added
+  // (known by its catalog id) or still waiting (known by name). Looked up in
+  // what the rules catch right now, so only a caught series can be skipped.
   route('post', '/api/autoadd/skip', async (req, res) => {
-    const cvId = Number(req.body?.cvId);
-    const { matches } = await matchesFor(store.rules(), { feed, ...lists() });
-    const m = matches.find((x) => x.cvId === cvId);
+    const key = String(req.body?.key || '');
+    const { matches } = await caught(store.rules());
+    const m = matches.find((x) => x.key === key);
     if (!m) return res.status(404).json({ error: 'no rule catches that series right now', code: 'gone' });
-    if (m.state !== 'new') return res.status(409).json({ error: 'that series is not waiting to be added', code: 'gone' });
-    store.record('skipped', m, null);
+    if (m.state === 'new') store.record('skipped', m, null);
+    else if (m.state === 'waiting') store.skipPending(m, true);
+    else return res.status(409).json({ error: 'that series is not waiting to be added', code: 'gone' });
     res.json({ skipped: true });
   });
 
   // Take a series off the record: a skipped one is caught again, and one that
   // was added and later deleted may be added again.
   route('post', '/api/autoadd/forget', (req, res) => {
-    res.json({ forgotten: store.forget(req.body?.cvId) });
+    const cvId = Number(req.body?.cvId) || null;
+    const nameKey = req.body?.nameKey ? String(req.body.nameKey) : null;
+    let forgotten = false;
+    if (cvId) forgotten = store.forget(cvId) || forgotten;
+    if (nameKey) forgotten = store.unskipPending(nameKey) || forgotten;
+    res.json({ forgotten });
   });
 
   // Run the rules now. Answers when the pass is done; it shows on the Jobs
   // page like the scheduled one.
   route('post', '/api/autoadd/run', async (req, res) => {
-    const start = () => { try { req.app?.locals?.startDownloads?.(); } catch { /* older core: the queue picks them up at its next kick */ } };
     let summary = null;
-    await asJob(JOB_LABEL, async () => (summary = await runPass(ownDb(), start)));
+    await asJob(JOB_LABEL, async () => (summary = await runPass(ownDb(), kick(req))));
     res.json(summary);
   });
 }

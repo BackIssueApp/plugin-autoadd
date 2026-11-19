@@ -1,7 +1,7 @@
 {
   "name": "autoadd",
   "version": "0.1.0",
-  "description": "Keyword rules that add upcoming series to the library automatically, up to eight weeks before the first issue ships",
+  "description": "Keyword rules that watch the release list up to eight weeks ahead and add matching series to the library automatically",
   "type": "module",
   "private": true,
   "license": "GPL-3.0-or-later",
