@@ -1,0 +1,123 @@
+{
+  "error": {
+    "duplicate": "已存在相同的规则。",
+    "gone": "该系列已不在待添加之列。"
+  },
+  "match": {
+    "ships": "第 {number} 期将于 {date} 发售",
+    "shipsNoNumber": "将于 {date} 发售",
+    "rule": "规则：{keyword}"
+  },
+  "state": {
+    "new": "将被添加",
+    "waiting": "等待资料",
+    "library": "已在书库中",
+    "skipped": "已跳过",
+    "removed": "已从书库移除"
+  },
+  "rule": {
+    "publisher": "出版商：{publisher}",
+    "exclude": "排除：{words}",
+    "noCollected": "仅单期",
+    "withCollected": "包含合订本",
+    "scopeNew": "从下一期开始",
+    "scopeAll": "所有期刊"
+  },
+  "rules": {
+    "empty": "还没有规则。请在下方创建一条。",
+    "toggle": "开启或关闭此规则",
+    "delete": "删除",
+    "deleteConfirm": "删除规则“{keyword}”？它已添加的系列仍会保留在书库中。",
+    "deleted": "规则已删除",
+    "heading": "规则"
+  },
+  "preview": {
+    "loading": "正在查看未来几周…",
+    "failed": "无法读取新刊列表：{error}",
+    "none": "未来 {weeks} 周内暂无匹配。规则会继续留意。",
+    "count": {
+      "other": "此规则在未来 {weeks} 周内匹配到 {count} 个系列："
+    }
+  },
+  "form": {
+    "saved": "规则已保存",
+    "keyword": "系列名称包含",
+    "keywordHint": "例如 Star Trek",
+    "publisher": "出版商（可选）",
+    "exclude": "排除名称中包含以下内容的系列（可选）",
+    "excludeHint": "多个词用逗号分隔",
+    "scope": "下载",
+    "scopeAll": "该系列的所有期刊",
+    "scopeNew": "仅下一期及之后",
+    "collected": "仅单期（跳过平装合订本、精装本和总集）",
+    "save": "保存规则"
+  },
+  "matches": {
+    "loading": "正在读取新刊列表…",
+    "empty": "未来 {weeks} 周内暂无与规则匹配的内容。",
+    "noRules": "规则匹配到的系列会显示在这里。",
+    "skip": "跳过",
+    "allow": "允许",
+    "addAgain": "再次添加",
+    "open": "打开",
+    "heading": "未来几周匹配到的系列"
+  },
+  "history": {
+    "empty": "尚未添加任何内容。",
+    "skippedOn": "跳过于 {date}",
+    "addedOn": "添加于 {date}",
+    "heading": "已添加的系列"
+  },
+  "run": {
+    "last": "上次检查：{date}",
+    "never": "尚未检查",
+    "running": "正在检查…",
+    "added": {
+      "other": "已添加 {count} 个系列"
+    },
+    "failed": {
+      "other": "有 {count} 个系列未能添加，下次检查时会重试。"
+    },
+    "nothing": "没有新内容可添加",
+    "now": "立即检查"
+  },
+  "page": {
+    "title": "自动添加",
+    "close": "关闭 (Esc)",
+    "lead": "系列一出现在新刊列表中，规则就会把它添加到书库，最早可在第一期发售前 {weeks} 周。之后该系列会像你手动添加的系列一样受到监控。"
+  },
+  "menu": {
+    "label": "自动添加",
+    "title": "自动为你添加即将推出的系列的规则"
+  },
+  "_shared": {
+    "plugins": {
+      "autoadd": {
+        "description": "按关键词设置规则，自动将即将推出的系列添加到书库，最早可在第一期发售前八周"
+      }
+    },
+    "permissions": {
+      "autoadd": {
+        "manage": {
+          "label": "管理自动添加规则",
+          "description": "编写并运行自动将即将推出的系列添加到书库的规则"
+        }
+      }
+    },
+    "jobs": {
+      "autoadd-scan": {
+        "label": "添加与规则匹配的即将推出的系列"
+      }
+    },
+    "notifications": {
+      "autoaddAdded": {
+        "title": "已添加 {title}",
+        "body": "它与你的规则“{keyword}”匹配。"
+      },
+      "autoaddMore": {
+        "title": "另外添加了 {count} 个系列",
+        "body": "完整列表见“自动添加”。"
+      }
+    }
+  }
+}

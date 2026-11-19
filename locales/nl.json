@@ -1,0 +1,126 @@
+{
+  "error": {
+    "duplicate": "Zo’n regel bestaat al.",
+    "gone": "Die serie wacht niet meer op toevoeging."
+  },
+  "match": {
+    "ships": "Nr. {number} verschijnt op {date}",
+    "shipsNoNumber": "Verschijnt op {date}",
+    "rule": "Regel: {keyword}"
+  },
+  "state": {
+    "new": "Wordt toegevoegd",
+    "waiting": "Wacht op gegevens",
+    "library": "In je bibliotheek",
+    "skipped": "Overgeslagen",
+    "removed": "Uit je bibliotheek verwijderd"
+  },
+  "rule": {
+    "publisher": "Uitgever: {publisher}",
+    "exclude": "Zonder: {words}",
+    "noCollected": "Alleen losse nummers",
+    "withCollected": "Ook verzamelbundels",
+    "scopeNew": "Vanaf het volgende nummer",
+    "scopeAll": "Elk nummer"
+  },
+  "rules": {
+    "empty": "Nog geen regels. Schrijf er hieronder een.",
+    "toggle": "Deze regel aan- of uitzetten",
+    "delete": "Verwijderen",
+    "deleteConfirm": "De regel ‘{keyword}’ verwijderen? Series die de regel al heeft toegevoegd blijven in je bibliotheek.",
+    "deleted": "Regel verwijderd",
+    "heading": "Regels"
+  },
+  "preview": {
+    "loading": "De komende weken worden bekeken…",
+    "failed": "De lijst met nieuwe uitgaven kon niet worden gelezen: {error}",
+    "none": "In de komende {weeks} weken past er nog niets. De regel blijft opletten.",
+    "count": {
+      "one": "Deze regel vangt {count} serie in de komende {weeks} weken:",
+      "other": "Deze regel vangt {count} series in de komende {weeks} weken:"
+    }
+  },
+  "form": {
+    "saved": "Regel opgeslagen",
+    "keyword": "Serienaam bevat",
+    "keywordHint": "bijv. Star Trek",
+    "publisher": "Uitgever (optioneel)",
+    "exclude": "Namen weglaten die dit bevatten (optioneel)",
+    "excludeHint": "Woorden, gescheiden door komma’s",
+    "scope": "Downloaden",
+    "scopeAll": "Elk nummer van de serie",
+    "scopeNew": "Alleen het volgende nummer en later",
+    "collected": "Alleen losse nummers (geen paperbacks, hardcovers en omnibussen)",
+    "save": "Regel opslaan"
+  },
+  "matches": {
+    "loading": "De lijst met nieuwe uitgaven wordt gelezen…",
+    "empty": "In de komende {weeks} weken past er nog niets bij je regels.",
+    "noRules": "Series die je regels vangen, verschijnen hier.",
+    "skip": "Overslaan",
+    "allow": "Toestaan",
+    "addAgain": "Opnieuw toevoegen",
+    "open": "Openen",
+    "heading": "Gevangen in de komende weken"
+  },
+  "history": {
+    "empty": "Er is nog niets toegevoegd.",
+    "skippedOn": "Overgeslagen op {date}",
+    "addedOn": "Toegevoegd op {date}",
+    "heading": "Tot nu toe toegevoegd"
+  },
+  "run": {
+    "last": "Laatst gecontroleerd: {date}",
+    "never": "Nog niet gecontroleerd",
+    "running": "Bezig met controleren…",
+    "added": {
+      "one": "{count} serie toegevoegd",
+      "other": "{count} series toegevoegd"
+    },
+    "failed": {
+      "one": "{count} serie kon niet worden toegevoegd. Bij de volgende controle wordt het opnieuw geprobeerd.",
+      "other": "{count} series konden niet worden toegevoegd. Bij de volgende controle wordt het opnieuw geprobeerd."
+    },
+    "nothing": "Niets nieuws om toe te voegen",
+    "now": "Nu controleren"
+  },
+  "page": {
+    "title": "Automatisch toevoegen",
+    "close": "Sluiten (Esc)",
+    "lead": "Een regel voegt een serie toe aan je bibliotheek zodra die op de lijst met nieuwe uitgaven staat, tot {weeks} weken voordat het eerste nummer verschijnt. Daarna wordt de serie bewaakt zoals een serie die je zelf hebt toegevoegd."
+  },
+  "menu": {
+    "label": "Automatisch toevoegen",
+    "title": "Regels die komende series voor je toevoegen"
+  },
+  "_shared": {
+    "plugins": {
+      "autoadd": {
+        "description": "Trefwoordregels die komende series automatisch aan de bibliotheek toevoegen, tot acht weken voordat het eerste nummer verschijnt"
+      }
+    },
+    "permissions": {
+      "autoadd": {
+        "manage": {
+          "label": "Regels voor automatisch toevoegen beheren",
+          "description": "De regels schrijven die komende series automatisch aan de bibliotheek toevoegen, en ze uitvoeren"
+        }
+      }
+    },
+    "jobs": {
+      "autoadd-scan": {
+        "label": "Komende series toevoegen die bij een regel passen"
+      }
+    },
+    "notifications": {
+      "autoaddAdded": {
+        "title": "{title} toegevoegd",
+        "body": "De serie past bij je regel ‘{keyword}’."
+      },
+      "autoaddMore": {
+        "title": "Nog {count} series toegevoegd",
+        "body": "De volledige lijst staat bij Automatisch toevoegen."
+      }
+    }
+  }
+}

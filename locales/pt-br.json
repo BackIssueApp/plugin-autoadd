@@ -1,0 +1,126 @@
+{
+  "error": {
+    "duplicate": "Já existe uma regra igual.",
+    "gone": "Essa série não está mais esperando para ser adicionada."
+  },
+  "match": {
+    "ships": "A nº {number} sai em {date}",
+    "shipsNoNumber": "Sai em {date}",
+    "rule": "Regra: {keyword}"
+  },
+  "state": {
+    "new": "Será adicionada",
+    "waiting": "Aguardando dados",
+    "library": "Na sua biblioteca",
+    "skipped": "Ignorada",
+    "removed": "Removida da sua biblioteca"
+  },
+  "rule": {
+    "publisher": "Editora: {publisher}",
+    "exclude": "Sem: {words}",
+    "noCollected": "Só edições avulsas",
+    "withCollected": "Encadernados também",
+    "scopeNew": "A partir da próxima edição",
+    "scopeAll": "Todas as edições"
+  },
+  "rules": {
+    "empty": "Ainda não há regras. Escreva uma abaixo.",
+    "toggle": "Ligar ou desligar esta regra",
+    "delete": "Excluir",
+    "deleteConfirm": "Excluir a regra “{keyword}”? As séries que ela já adicionou continuam na sua biblioteca.",
+    "deleted": "Regra excluída",
+    "heading": "Regras"
+  },
+  "preview": {
+    "loading": "Consultando as próximas semanas…",
+    "failed": "Não foi possível ler a lista de lançamentos: {error}",
+    "none": "Nada corresponde ainda nas próximas {weeks} semanas. A regra continua de olho.",
+    "count": {
+      "one": "Esta regra pega {count} série nas próximas {weeks} semanas:",
+      "other": "Esta regra pega {count} séries nas próximas {weeks} semanas:"
+    }
+  },
+  "form": {
+    "saved": "Regra salva",
+    "keyword": "O nome da série contém",
+    "keywordHint": "ex.: Star Trek",
+    "publisher": "Editora (opcional)",
+    "exclude": "Deixar de fora nomes que contenham (opcional)",
+    "excludeHint": "Palavras separadas por vírgulas",
+    "scope": "Baixar",
+    "scopeAll": "Todas as edições da série",
+    "scopeNew": "Só a próxima edição e as seguintes",
+    "collected": "Só edições avulsas (sem encadernados, capas duras e omnibus)",
+    "save": "Salvar regra"
+  },
+  "matches": {
+    "loading": "Lendo a lista de lançamentos…",
+    "empty": "Nada corresponde ainda às suas regras nas próximas {weeks} semanas.",
+    "noRules": "As séries que suas regras pegam aparecem aqui.",
+    "skip": "Ignorar",
+    "allow": "Permitir",
+    "addAgain": "Adicionar de novo",
+    "open": "Abrir",
+    "heading": "Pegas nas próximas semanas"
+  },
+  "history": {
+    "empty": "Nada foi adicionado ainda.",
+    "skippedOn": "Ignorada em {date}",
+    "addedOn": "Adicionada em {date}",
+    "heading": "Adicionadas até agora"
+  },
+  "run": {
+    "last": "Última verificação: {date}",
+    "never": "Ainda não verificado",
+    "running": "Verificando…",
+    "added": {
+      "one": "{count} série adicionada",
+      "other": "{count} séries adicionadas"
+    },
+    "failed": {
+      "one": "Não foi possível adicionar {count} série. Uma nova tentativa é feita na próxima verificação.",
+      "other": "Não foi possível adicionar {count} séries. Uma nova tentativa é feita na próxima verificação."
+    },
+    "nothing": "Nada de novo para adicionar",
+    "now": "Verificar agora"
+  },
+  "page": {
+    "title": "Adição automática",
+    "close": "Fechar (Esc)",
+    "lead": "Uma regra adiciona uma série à sua biblioteca assim que ela aparece na lista de lançamentos, até {weeks} semanas antes de a primeira edição sair. Depois a série é monitorada como uma que você adicionou."
+  },
+  "menu": {
+    "label": "Adição automática",
+    "title": "Regras que adicionam para você as séries que vêm por aí"
+  },
+  "_shared": {
+    "plugins": {
+      "autoadd": {
+        "description": "Regras por palavra-chave que adicionam automaticamente à biblioteca as séries que vêm por aí, até oito semanas antes de a primeira edição sair"
+      }
+    },
+    "permissions": {
+      "autoadd": {
+        "manage": {
+          "label": "Gerenciar as regras de adição automática",
+          "description": "Escrever as regras que adicionam automaticamente à biblioteca as séries que vêm por aí, e executá-las"
+        }
+      }
+    },
+    "jobs": {
+      "autoadd-scan": {
+        "label": "Adicionar as próximas séries que correspondam a uma regra"
+      }
+    },
+    "notifications": {
+      "autoaddAdded": {
+        "title": "{title} adicionada",
+        "body": "Corresponde à sua regra “{keyword}”."
+      },
+      "autoaddMore": {
+        "title": "Mais {count} séries adicionadas",
+        "body": "A lista completa está em Adição automática."
+      }
+    }
+  }
+}

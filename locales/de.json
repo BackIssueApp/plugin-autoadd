@@ -1,0 +1,126 @@
+{
+  "error": {
+    "duplicate": "Eine solche Regel gibt es bereits.",
+    "gone": "Diese Serie wartet nicht mehr darauf, hinzugefügt zu werden."
+  },
+  "match": {
+    "ships": "Nr. {number} erscheint am {date}",
+    "shipsNoNumber": "Erscheint am {date}",
+    "rule": "Regel: {keyword}"
+  },
+  "state": {
+    "new": "Wird hinzugefügt",
+    "waiting": "Wartet auf Angaben",
+    "library": "In deiner Bibliothek",
+    "skipped": "Übersprungen",
+    "removed": "Aus deiner Bibliothek entfernt"
+  },
+  "rule": {
+    "publisher": "Verlag: {publisher}",
+    "exclude": "Ohne: {words}",
+    "noCollected": "Nur Einzelhefte",
+    "withCollected": "Auch Sammelbände",
+    "scopeNew": "Ab dem nächsten Heft",
+    "scopeAll": "Jedes Heft"
+  },
+  "rules": {
+    "empty": "Noch keine Regeln. Schreib unten eine.",
+    "toggle": "Diese Regel ein- oder ausschalten",
+    "delete": "Löschen",
+    "deleteConfirm": "Die Regel „{keyword}“ löschen? Serien, die sie schon hinzugefügt hat, bleiben in deiner Bibliothek.",
+    "deleted": "Regel gelöscht",
+    "heading": "Regeln"
+  },
+  "preview": {
+    "loading": "Die kommenden Wochen werden gelesen…",
+    "failed": "Die Liste der Neuerscheinungen konnte nicht gelesen werden: {error}",
+    "none": "In den nächsten {weeks} Wochen passt noch nichts. Die Regel beobachtet weiter.",
+    "count": {
+      "one": "Diese Regel erfasst {count} Serie in den nächsten {weeks} Wochen:",
+      "other": "Diese Regel erfasst {count} Serien in den nächsten {weeks} Wochen:"
+    }
+  },
+  "form": {
+    "saved": "Regel gespeichert",
+    "keyword": "Serienname enthält",
+    "keywordHint": "z. B. Star Trek",
+    "publisher": "Verlag (optional)",
+    "exclude": "Namen auslassen, die Folgendes enthalten (optional)",
+    "excludeHint": "Wörter, durch Kommas getrennt",
+    "scope": "Herunterladen",
+    "scopeAll": "Jedes Heft der Serie",
+    "scopeNew": "Nur das nächste Heft und spätere",
+    "collected": "Nur Einzelhefte (ohne Paperbacks, Hardcover und Omnibus-Ausgaben)",
+    "save": "Regel speichern"
+  },
+  "matches": {
+    "loading": "Die Liste der Neuerscheinungen wird gelesen…",
+    "empty": "In den nächsten {weeks} Wochen passt noch nichts zu deinen Regeln.",
+    "noRules": "Serien, die deine Regeln erfassen, erscheinen hier.",
+    "skip": "Überspringen",
+    "allow": "Zulassen",
+    "addAgain": "Erneut hinzufügen",
+    "open": "Öffnen",
+    "heading": "In den kommenden Wochen erfasst"
+  },
+  "history": {
+    "empty": "Bisher wurde nichts hinzugefügt.",
+    "skippedOn": "Übersprungen am {date}",
+    "addedOn": "Hinzugefügt am {date}",
+    "heading": "Bisher hinzugefügt"
+  },
+  "run": {
+    "last": "Zuletzt geprüft: {date}",
+    "never": "Noch nicht geprüft",
+    "running": "Wird geprüft…",
+    "added": {
+      "one": "{count} Serie hinzugefügt",
+      "other": "{count} Serien hinzugefügt"
+    },
+    "failed": {
+      "one": "{count} Serie konnte nicht hinzugefügt werden. Beim nächsten Prüfen wird es erneut versucht.",
+      "other": "{count} Serien konnten nicht hinzugefügt werden. Beim nächsten Prüfen wird es erneut versucht."
+    },
+    "nothing": "Nichts Neues hinzuzufügen",
+    "now": "Jetzt prüfen"
+  },
+  "page": {
+    "title": "Auto-Hinzufügen",
+    "close": "Schließen (Esc)",
+    "lead": "Eine Regel fügt eine Serie deiner Bibliothek hinzu, sobald sie auf der Liste der Neuerscheinungen steht, bis zu {weeks} Wochen bevor ihr erstes Heft erscheint. Danach wird die Serie überwacht wie eine, die du selbst hinzugefügt hast."
+  },
+  "menu": {
+    "label": "Auto-Hinzufügen",
+    "title": "Regeln, die kommende Serien für dich hinzufügen"
+  },
+  "_shared": {
+    "plugins": {
+      "autoadd": {
+        "description": "Stichwortregeln, die kommende Serien automatisch zur Bibliothek hinzufügen, bis zu acht Wochen bevor das erste Heft erscheint"
+      }
+    },
+    "permissions": {
+      "autoadd": {
+        "manage": {
+          "label": "Regeln für Auto-Hinzufügen verwalten",
+          "description": "Die Regeln schreiben, die kommende Serien automatisch zur Bibliothek hinzufügen, und sie ausführen"
+        }
+      }
+    },
+    "jobs": {
+      "autoadd-scan": {
+        "label": "Kommende Serien hinzufügen, die zu einer Regel passen"
+      }
+    },
+    "notifications": {
+      "autoaddAdded": {
+        "title": "{title} hinzugefügt",
+        "body": "Sie passt zu deiner Regel „{keyword}“."
+      },
+      "autoaddMore": {
+        "title": "{count} weitere Serien hinzugefügt",
+        "body": "Die vollständige Liste steht unter Auto-Hinzufügen."
+      }
+    }
+  }
+}

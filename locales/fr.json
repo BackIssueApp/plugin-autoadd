@@ -1,0 +1,126 @@
+{
+  "error": {
+    "duplicate": "Une règle identique existe déjà.",
+    "gone": "Cette série n’est plus en attente d’ajout."
+  },
+  "match": {
+    "ships": "Le n° {number} sort le {date}",
+    "shipsNoNumber": "Sort le {date}",
+    "rule": "Règle : {keyword}"
+  },
+  "state": {
+    "new": "Sera ajoutée",
+    "waiting": "En attente d’informations",
+    "library": "Dans votre bibliothèque",
+    "skipped": "Ignorée",
+    "removed": "Retirée de votre bibliothèque"
+  },
+  "rule": {
+    "publisher": "Éditeur : {publisher}",
+    "exclude": "Sans : {words}",
+    "noCollected": "Numéros individuels seulement",
+    "withCollected": "Recueils compris",
+    "scopeNew": "À partir du prochain numéro",
+    "scopeAll": "Tous les numéros"
+  },
+  "rules": {
+    "empty": "Aucune règle pour l’instant. Écrivez-en une ci-dessous.",
+    "toggle": "Activer ou désactiver cette règle",
+    "delete": "Supprimer",
+    "deleteConfirm": "Supprimer la règle « {keyword} » ? Les séries qu’elle a déjà ajoutées restent dans votre bibliothèque.",
+    "deleted": "Règle supprimée",
+    "heading": "Règles"
+  },
+  "preview": {
+    "loading": "Lecture des semaines à venir…",
+    "failed": "La liste des sorties n’a pas pu être lue : {error}",
+    "none": "Rien ne correspond encore dans les {weeks} prochaines semaines. La règle continue de surveiller.",
+    "count": {
+      "one": "Cette règle retient {count} série dans les {weeks} prochaines semaines :",
+      "other": "Cette règle retient {count} séries dans les {weeks} prochaines semaines :"
+    }
+  },
+  "form": {
+    "saved": "Règle enregistrée",
+    "keyword": "Le nom de la série contient",
+    "keywordHint": "p. ex. Star Trek",
+    "publisher": "Éditeur (facultatif)",
+    "exclude": "Écarter les noms contenant (facultatif)",
+    "excludeHint": "Mots séparés par des virgules",
+    "scope": "Télécharger",
+    "scopeAll": "Tous les numéros de la série",
+    "scopeNew": "Seulement le prochain numéro et les suivants",
+    "collected": "Numéros individuels seulement (sans albums brochés, reliés ni intégrales)",
+    "save": "Enregistrer la règle"
+  },
+  "matches": {
+    "loading": "Lecture de la liste des sorties…",
+    "empty": "Rien ne correspond encore à vos règles dans les {weeks} prochaines semaines.",
+    "noRules": "Les séries retenues par vos règles apparaissent ici.",
+    "skip": "Ignorer",
+    "allow": "Autoriser",
+    "addAgain": "Ajouter à nouveau",
+    "open": "Ouvrir",
+    "heading": "Retenues dans les semaines à venir"
+  },
+  "history": {
+    "empty": "Rien n’a encore été ajouté.",
+    "skippedOn": "Ignorée le {date}",
+    "addedOn": "Ajoutée le {date}",
+    "heading": "Ajoutées jusqu’ici"
+  },
+  "run": {
+    "last": "Dernière vérification : {date}",
+    "never": "Pas encore vérifié",
+    "running": "Vérification…",
+    "added": {
+      "one": "{count} série ajoutée",
+      "other": "{count} séries ajoutées"
+    },
+    "failed": {
+      "one": "{count} série n’a pas pu être ajoutée. Nouvel essai à la prochaine vérification.",
+      "other": "{count} séries n’ont pas pu être ajoutées. Nouvel essai à la prochaine vérification."
+    },
+    "nothing": "Rien de nouveau à ajouter",
+    "now": "Vérifier maintenant"
+  },
+  "page": {
+    "title": "Ajout automatique",
+    "close": "Fermer (Échap)",
+    "lead": "Une règle ajoute une série à votre bibliothèque dès qu’elle apparaît dans la liste des sorties, jusqu’à {weeks} semaines avant la sortie de son premier numéro. La série est ensuite surveillée comme si vous l’aviez ajoutée vous-même."
+  },
+  "menu": {
+    "label": "Ajout automatique",
+    "title": "Des règles qui ajoutent pour vous les séries à venir"
+  },
+  "_shared": {
+    "plugins": {
+      "autoadd": {
+        "description": "Des règles par mot-clé qui ajoutent automatiquement les séries à venir à la bibliothèque, jusqu’à huit semaines avant la sortie du premier numéro"
+      }
+    },
+    "permissions": {
+      "autoadd": {
+        "manage": {
+          "label": "Gérer les règles d’ajout automatique",
+          "description": "Écrire les règles qui ajoutent automatiquement les séries à venir à la bibliothèque, et les lancer"
+        }
+      }
+    },
+    "jobs": {
+      "autoadd-scan": {
+        "label": "Ajouter les séries à venir qui correspondent à une règle"
+      }
+    },
+    "notifications": {
+      "autoaddAdded": {
+        "title": "{title} ajoutée",
+        "body": "Elle correspond à votre règle « {keyword} »."
+      },
+      "autoaddMore": {
+        "title": "{count} autres séries ajoutées",
+        "body": "La liste complète se trouve dans Ajout automatique."
+      }
+    }
+  }
+}

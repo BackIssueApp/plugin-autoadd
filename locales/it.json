@@ -1,0 +1,126 @@
+{
+  "error": {
+    "duplicate": "Esiste già una regola uguale.",
+    "gone": "Questa serie non è più in attesa di essere aggiunta."
+  },
+  "match": {
+    "ships": "Il n. {number} esce il {date}",
+    "shipsNoNumber": "Esce il {date}",
+    "rule": "Regola: {keyword}"
+  },
+  "state": {
+    "new": "Verrà aggiunta",
+    "waiting": "In attesa di dati",
+    "library": "Nella tua biblioteca",
+    "skipped": "Esclusa",
+    "removed": "Rimossa dalla tua biblioteca"
+  },
+  "rule": {
+    "publisher": "Editore: {publisher}",
+    "exclude": "Senza: {words}",
+    "noCollected": "Solo albi singoli",
+    "withCollected": "Anche raccolte",
+    "scopeNew": "Dal prossimo albo in poi",
+    "scopeAll": "Ogni albo"
+  },
+  "rules": {
+    "empty": "Ancora nessuna regola. Scrivine una qui sotto.",
+    "toggle": "Attiva o disattiva questa regola",
+    "delete": "Elimina",
+    "deleteConfirm": "Eliminare la regola “{keyword}”? Le serie che ha già aggiunto restano nella tua biblioteca.",
+    "deleted": "Regola eliminata",
+    "heading": "Regole"
+  },
+  "preview": {
+    "loading": "Lettura delle prossime settimane…",
+    "failed": "Impossibile leggere l’elenco delle uscite: {error}",
+    "none": "Ancora nessuna corrispondenza nelle prossime {weeks} settimane. La regola continua a controllare.",
+    "count": {
+      "one": "Questa regola cattura {count} serie nelle prossime {weeks} settimane:",
+      "other": "Questa regola cattura {count} serie nelle prossime {weeks} settimane:"
+    }
+  },
+  "form": {
+    "saved": "Regola salvata",
+    "keyword": "Il nome della serie contiene",
+    "keywordHint": "es. Star Trek",
+    "publisher": "Editore (facoltativo)",
+    "exclude": "Escludi i nomi che contengono (facoltativo)",
+    "excludeHint": "Parole separate da virgole",
+    "scope": "Scarica",
+    "scopeAll": "Ogni albo della serie",
+    "scopeNew": "Solo il prossimo albo e i successivi",
+    "collected": "Solo albi singoli (niente brossurati, cartonati e omnibus)",
+    "save": "Salva regola"
+  },
+  "matches": {
+    "loading": "Lettura dell’elenco delle uscite…",
+    "empty": "Ancora niente corrisponde alle tue regole nelle prossime {weeks} settimane.",
+    "noRules": "Le serie catturate dalle tue regole compaiono qui.",
+    "skip": "Escludi",
+    "allow": "Consenti",
+    "addAgain": "Aggiungi di nuovo",
+    "open": "Apri",
+    "heading": "Catturate nelle prossime settimane"
+  },
+  "history": {
+    "empty": "Non è stato ancora aggiunto nulla.",
+    "skippedOn": "Esclusa il {date}",
+    "addedOn": "Aggiunta il {date}",
+    "heading": "Aggiunte finora"
+  },
+  "run": {
+    "last": "Ultimo controllo: {date}",
+    "never": "Non ancora controllato",
+    "running": "Controllo in corso…",
+    "added": {
+      "one": "{count} serie aggiunta",
+      "other": "{count} serie aggiunte"
+    },
+    "failed": {
+      "one": "Non è stato possibile aggiungere {count} serie. Si riprova al prossimo controllo.",
+      "other": "Non è stato possibile aggiungere {count} serie. Si riprova al prossimo controllo."
+    },
+    "nothing": "Niente di nuovo da aggiungere",
+    "now": "Controlla ora"
+  },
+  "page": {
+    "title": "Aggiunta automatica",
+    "close": "Chiudi (Esc)",
+    "lead": "Una regola aggiunge una serie alla tua biblioteca appena compare nell’elenco delle uscite, fino a {weeks} settimane prima dell’uscita del primo albo. La serie viene poi monitorata come una aggiunta da te."
+  },
+  "menu": {
+    "label": "Aggiunta automatica",
+    "title": "Regole che aggiungono per te le serie in arrivo"
+  },
+  "_shared": {
+    "plugins": {
+      "autoadd": {
+        "description": "Regole per parola chiave che aggiungono automaticamente alla biblioteca le serie in arrivo, fino a otto settimane prima dell’uscita del primo albo"
+      }
+    },
+    "permissions": {
+      "autoadd": {
+        "manage": {
+          "label": "Gestire le regole di aggiunta automatica",
+          "description": "Scrivere le regole che aggiungono automaticamente alla biblioteca le serie in arrivo, ed eseguirle"
+        }
+      }
+    },
+    "jobs": {
+      "autoadd-scan": {
+        "label": "Aggiungi le serie in arrivo che corrispondono a una regola"
+      }
+    },
+    "notifications": {
+      "autoaddAdded": {
+        "title": "Aggiunta {title}",
+        "body": "Corrisponde alla tua regola “{keyword}”."
+      },
+      "autoaddMore": {
+        "title": "Aggiunte altre {count} serie",
+        "body": "L’elenco completo è in Aggiunta automatica."
+      }
+    }
+  }
+}

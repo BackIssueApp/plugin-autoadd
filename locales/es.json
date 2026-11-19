@@ -1,0 +1,126 @@
+{
+  "error": {
+    "duplicate": "Ya existe una regla igual.",
+    "gone": "Esa serie ya no está pendiente de añadirse."
+  },
+  "match": {
+    "ships": "El n.º {number} sale el {date}",
+    "shipsNoNumber": "Sale el {date}",
+    "rule": "Regla: {keyword}"
+  },
+  "state": {
+    "new": "Se añadirá",
+    "waiting": "A la espera de datos",
+    "library": "En tu biblioteca",
+    "skipped": "Omitida",
+    "removed": "Eliminada de tu biblioteca"
+  },
+  "rule": {
+    "publisher": "Editorial: {publisher}",
+    "exclude": "Sin: {words}",
+    "noCollected": "Solo números sueltos",
+    "withCollected": "También recopilatorios",
+    "scopeNew": "Desde el próximo número",
+    "scopeAll": "Todos los números"
+  },
+  "rules": {
+    "empty": "Aún no hay reglas. Escribe una abajo.",
+    "toggle": "Activar o desactivar esta regla",
+    "delete": "Eliminar",
+    "deleteConfirm": "¿Eliminar la regla «{keyword}»? Las series que ya añadió siguen en tu biblioteca.",
+    "deleted": "Regla eliminada",
+    "heading": "Reglas"
+  },
+  "preview": {
+    "loading": "Consultando las próximas semanas…",
+    "failed": "No se pudo leer la lista de novedades: {error}",
+    "none": "Todavía no hay coincidencias en las próximas {weeks} semanas. La regla sigue vigilando.",
+    "count": {
+      "one": "Esta regla capta {count} serie en las próximas {weeks} semanas:",
+      "other": "Esta regla capta {count} series en las próximas {weeks} semanas:"
+    }
+  },
+  "form": {
+    "saved": "Regla guardada",
+    "keyword": "El nombre de la serie contiene",
+    "keywordHint": "p. ej. Star Trek",
+    "publisher": "Editorial (opcional)",
+    "exclude": "Dejar fuera los nombres que contengan (opcional)",
+    "excludeHint": "Palabras separadas por comas",
+    "scope": "Descargar",
+    "scopeAll": "Todos los números de la serie",
+    "scopeNew": "Solo el próximo número y los siguientes",
+    "collected": "Solo números sueltos (sin tomos en rústica, tapa dura ni ómnibus)",
+    "save": "Guardar regla"
+  },
+  "matches": {
+    "loading": "Leyendo la lista de novedades…",
+    "empty": "Todavía nada coincide con tus reglas en las próximas {weeks} semanas.",
+    "noRules": "Aquí aparecen las series que captan tus reglas.",
+    "skip": "Omitir",
+    "allow": "Permitir",
+    "addAgain": "Añadir de nuevo",
+    "open": "Abrir",
+    "heading": "Captadas en las próximas semanas"
+  },
+  "history": {
+    "empty": "Todavía no se ha añadido nada.",
+    "skippedOn": "Omitida el {date}",
+    "addedOn": "Añadida el {date}",
+    "heading": "Añadidas hasta ahora"
+  },
+  "run": {
+    "last": "Última comprobación: {date}",
+    "never": "Aún sin comprobar",
+    "running": "Comprobando…",
+    "added": {
+      "one": "{count} serie añadida",
+      "other": "{count} series añadidas"
+    },
+    "failed": {
+      "one": "No se pudo añadir {count} serie. Se intentará de nuevo en la próxima comprobación.",
+      "other": "No se pudieron añadir {count} series. Se intentará de nuevo en la próxima comprobación."
+    },
+    "nothing": "Nada nuevo que añadir",
+    "now": "Comprobar ahora"
+  },
+  "page": {
+    "title": "Adición automática",
+    "close": "Cerrar (Esc)",
+    "lead": "Una regla añade una serie a tu biblioteca en cuanto aparece en la lista de novedades, hasta {weeks} semanas antes de que salga su primer número. Después la serie se supervisa como una que hubieras añadido tú."
+  },
+  "menu": {
+    "label": "Adición automática",
+    "title": "Reglas que añaden por ti las series que están por salir"
+  },
+  "_shared": {
+    "plugins": {
+      "autoadd": {
+        "description": "Reglas por palabra clave que añaden automáticamente a la biblioteca las series que están por salir, hasta ocho semanas antes del primer número"
+      }
+    },
+    "permissions": {
+      "autoadd": {
+        "manage": {
+          "label": "Gestionar las reglas de adición automática",
+          "description": "Escribir las reglas que añaden automáticamente a la biblioteca las series que están por salir, y ejecutarlas"
+        }
+      }
+    },
+    "jobs": {
+      "autoadd-scan": {
+        "label": "Añadir las series próximas que coincidan con una regla"
+      }
+    },
+    "notifications": {
+      "autoaddAdded": {
+        "title": "{title} añadida",
+        "body": "Coincide con tu regla «{keyword}»."
+      },
+      "autoaddMore": {
+        "title": "{count} series más añadidas",
+        "body": "La lista completa está en Adición automática."
+      }
+    }
+  }
+}

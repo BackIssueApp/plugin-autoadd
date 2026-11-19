@@ -1,0 +1,132 @@
+{
+  "error": {
+    "duplicate": "Taka reguła już istnieje.",
+    "gone": "Ta seria nie czeka już na dodanie."
+  },
+  "match": {
+    "ships": "Nr {number} ukaże się {date}",
+    "shipsNoNumber": "Ukaże się {date}",
+    "rule": "Reguła: {keyword}"
+  },
+  "state": {
+    "new": "Zostanie dodana",
+    "waiting": "Czeka na dane",
+    "library": "W twojej bibliotece",
+    "skipped": "Pominięta",
+    "removed": "Usunięta z twojej biblioteki"
+  },
+  "rule": {
+    "publisher": "Wydawca: {publisher}",
+    "exclude": "Bez: {words}",
+    "noCollected": "Tylko pojedyncze zeszyty",
+    "withCollected": "Także wydania zbiorcze",
+    "scopeNew": "Od najbliższego zeszytu",
+    "scopeAll": "Każdy zeszyt"
+  },
+  "rules": {
+    "empty": "Nie ma jeszcze reguł. Napisz jedną poniżej.",
+    "toggle": "Włącz lub wyłącz tę regułę",
+    "delete": "Usuń",
+    "deleteConfirm": "Usunąć regułę „{keyword}”? Serie, które już dodała, zostaną w twojej bibliotece.",
+    "deleted": "Reguła usunięta",
+    "heading": "Reguły"
+  },
+  "preview": {
+    "loading": "Sprawdzanie nadchodzących tygodni…",
+    "failed": "Nie udało się odczytać listy premier: {error}",
+    "none": "W najbliższych {weeks} tygodniach nic jeszcze nie pasuje. Reguła czuwa dalej.",
+    "count": {
+      "one": "Ta reguła wyłapuje {count} serię w najbliższych {weeks} tygodniach:",
+      "few": "Ta reguła wyłapuje {count} serie w najbliższych {weeks} tygodniach:",
+      "many": "Ta reguła wyłapuje {count} serii w najbliższych {weeks} tygodniach:",
+      "other": "Ta reguła wyłapuje {count} serii w najbliższych {weeks} tygodniach:"
+    }
+  },
+  "form": {
+    "saved": "Reguła zapisana",
+    "keyword": "Nazwa serii zawiera",
+    "keywordHint": "np. Star Trek",
+    "publisher": "Wydawca (opcjonalnie)",
+    "exclude": "Pomiń nazwy zawierające (opcjonalnie)",
+    "excludeHint": "Słowa oddzielone przecinkami",
+    "scope": "Pobieraj",
+    "scopeAll": "Każdy zeszyt serii",
+    "scopeNew": "Tylko najbliższy zeszyt i kolejne",
+    "collected": "Tylko pojedyncze zeszyty (bez wydań w miękkiej i twardej oprawie oraz omnibusów)",
+    "save": "Zapisz regułę"
+  },
+  "matches": {
+    "loading": "Odczytywanie listy premier…",
+    "empty": "W najbliższych {weeks} tygodniach nic jeszcze nie pasuje do twoich reguł.",
+    "noRules": "Tu pojawiają się serie wyłapane przez twoje reguły.",
+    "skip": "Pomiń",
+    "allow": "Zezwól",
+    "addAgain": "Dodaj ponownie",
+    "open": "Otwórz",
+    "heading": "Wyłapane w nadchodzących tygodniach"
+  },
+  "history": {
+    "empty": "Nic jeszcze nie dodano.",
+    "skippedOn": "Pominięto {date}",
+    "addedOn": "Dodano {date}",
+    "heading": "Dodane do tej pory"
+  },
+  "run": {
+    "last": "Ostatnie sprawdzenie: {date}",
+    "never": "Jeszcze nie sprawdzano",
+    "running": "Sprawdzanie…",
+    "added": {
+      "one": "Dodano {count} serię",
+      "few": "Dodano {count} serie",
+      "many": "Dodano {count} serii",
+      "other": "Dodano {count} serii"
+    },
+    "failed": {
+      "one": "Nie udało się dodać {count} serii. Kolejna próba przy następnym sprawdzeniu.",
+      "few": "Nie udało się dodać {count} serii. Kolejna próba przy następnym sprawdzeniu.",
+      "many": "Nie udało się dodać {count} serii. Kolejna próba przy następnym sprawdzeniu.",
+      "other": "Nie udało się dodać {count} serii. Kolejna próba przy następnym sprawdzeniu."
+    },
+    "nothing": "Nic nowego do dodania",
+    "now": "Sprawdź teraz"
+  },
+  "page": {
+    "title": "Automatyczne dodawanie",
+    "close": "Zamknij (Esc)",
+    "lead": "Reguła dodaje serię do twojej biblioteki, gdy tylko pojawi się ona na liście premier, nawet {weeks} tygodni przed ukazaniem się pierwszego zeszytu. Potem seria jest monitorowana tak jak dodana ręcznie."
+  },
+  "menu": {
+    "label": "Automatyczne dodawanie",
+    "title": "Reguły, które dodają za ciebie nadchodzące serie"
+  },
+  "_shared": {
+    "plugins": {
+      "autoadd": {
+        "description": "Reguły ze słowami kluczowymi, które automatycznie dodają nadchodzące serie do biblioteki, nawet osiem tygodni przed ukazaniem się pierwszego zeszytu"
+      }
+    },
+    "permissions": {
+      "autoadd": {
+        "manage": {
+          "label": "Zarządzanie regułami automatycznego dodawania",
+          "description": "Pisanie reguł, które automatycznie dodają nadchodzące serie do biblioteki, oraz ich uruchamianie"
+        }
+      }
+    },
+    "jobs": {
+      "autoadd-scan": {
+        "label": "Dodaj nadchodzące serie pasujące do reguły"
+      }
+    },
+    "notifications": {
+      "autoaddAdded": {
+        "title": "Dodano: {title}",
+        "body": "Pasuje do twojej reguły „{keyword}”."
+      },
+      "autoaddMore": {
+        "title": "Dodano jeszcze serie: {count}",
+        "body": "Pełna lista jest w Automatycznym dodawaniu."
+      }
+    }
+  }
+}

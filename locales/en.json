@@ -1,0 +1,126 @@
+{
+  "error": {
+    "duplicate": "A rule like this one already exists.",
+    "gone": "That series is no longer waiting to be added."
+  },
+  "match": {
+    "ships": "#{number} ships {date}",
+    "shipsNoNumber": "Ships {date}",
+    "rule": "Rule: {keyword}"
+  },
+  "state": {
+    "new": "Will be added",
+    "waiting": "Waiting for details",
+    "library": "In your library",
+    "skipped": "Skipped",
+    "removed": "Removed from your library"
+  },
+  "rule": {
+    "publisher": "Publisher: {publisher}",
+    "exclude": "Leaves out: {words}",
+    "noCollected": "Single issues only",
+    "withCollected": "Collected editions too",
+    "scopeNew": "From the upcoming issue on",
+    "scopeAll": "Every issue"
+  },
+  "rules": {
+    "empty": "No rules yet. Write one below.",
+    "toggle": "Turn this rule on or off",
+    "delete": "Delete",
+    "deleteConfirm": "Delete the rule “{keyword}”? Series it already added stay in your library.",
+    "deleted": "Rule deleted",
+    "heading": "Rules"
+  },
+  "preview": {
+    "loading": "Looking at the weeks ahead…",
+    "failed": "The release list could not be read: {error}",
+    "none": "Nothing in the next {weeks} weeks matches yet. The rule keeps watching.",
+    "count": {
+      "one": "This rule catches {count} series in the next {weeks} weeks:",
+      "other": "This rule catches {count} series in the next {weeks} weeks:"
+    }
+  },
+  "form": {
+    "saved": "Rule saved",
+    "keyword": "Series name contains",
+    "keywordHint": "e.g. Star Trek",
+    "publisher": "Publisher (optional)",
+    "exclude": "Leave out names containing (optional)",
+    "excludeHint": "Words, separated by commas",
+    "scope": "Download",
+    "scopeAll": "Every issue of the series",
+    "scopeNew": "Only the upcoming issue and later",
+    "collected": "Single issues only (skip trade paperbacks, hardcovers and omnibuses)",
+    "save": "Save rule"
+  },
+  "matches": {
+    "loading": "Reading the release list…",
+    "empty": "Nothing in the next {weeks} weeks matches your rules yet.",
+    "noRules": "Series your rules catch show up here.",
+    "skip": "Skip",
+    "allow": "Allow",
+    "addAgain": "Add again",
+    "open": "Open",
+    "heading": "Caught in the weeks ahead"
+  },
+  "history": {
+    "empty": "Nothing has been added yet.",
+    "skippedOn": "Skipped {date}",
+    "addedOn": "Added {date}",
+    "heading": "Added so far"
+  },
+  "run": {
+    "last": "Last checked {date}",
+    "never": "Not checked yet",
+    "running": "Checking…",
+    "added": {
+      "one": "{count} series added",
+      "other": "{count} series added"
+    },
+    "failed": {
+      "one": "{count} series could not be added. It is tried again on the next check.",
+      "other": "{count} series could not be added. They are tried again on the next check."
+    },
+    "nothing": "Nothing new to add",
+    "now": "Check now"
+  },
+  "page": {
+    "title": "Auto-add",
+    "close": "Close (Esc)",
+    "lead": "A rule adds a series to your library as soon as it appears on the release list, up to {weeks} weeks before its first issue ships. The series is then monitored like one you added yourself."
+  },
+  "menu": {
+    "label": "Auto-add",
+    "title": "Rules that add upcoming series for you"
+  },
+  "_shared": {
+    "plugins": {
+      "autoadd": {
+        "description": "Keyword rules that add upcoming series to the library automatically, up to eight weeks before the first issue ships"
+      }
+    },
+    "permissions": {
+      "autoadd": {
+        "manage": {
+          "label": "Manage auto-add rules",
+          "description": "Write the rules that add upcoming series to the library automatically, and run them"
+        }
+      }
+    },
+    "jobs": {
+      "autoadd-scan": {
+        "label": "Add upcoming series that match a rule"
+      }
+    },
+    "notifications": {
+      "autoaddAdded": {
+        "title": "Added {title}",
+        "body": "It matches your rule “{keyword}”."
+      },
+      "autoaddMore": {
+        "title": "{count} more series added",
+        "body": "Auto-add has the full list."
+      }
+    }
+  }
+}
