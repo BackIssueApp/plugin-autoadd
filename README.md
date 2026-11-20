@@ -10,7 +10,7 @@ nothing is added without your say.
 ## Install
 
 One click from **Sidebar → Plugins** in BackIssue, or drop this folder into the
-app's `plugins/` directory and restart.
+app's `plugins/` directory and restart. It needs BackIssue 0.9.4 or newer.
 
 ## Use
 

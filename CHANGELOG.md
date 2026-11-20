@@ -8,6 +8,8 @@ by the maintainers when changes merge, so concurrent PRs don't conflict here.
 
 ## [Unreleased]
 
+## [0.1.0] — 2026-11-19
+
 ### Added
 
 - First version. An **Auto-add** page in the sidebar holds keyword rules: a
