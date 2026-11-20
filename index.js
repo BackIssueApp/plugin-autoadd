@@ -11,8 +11,10 @@
 // A series is added once. Deleting it afterwards does not bring it back, and
 // "Skip" on the page keeps a caught series out before it is added. A rule can
 // ask first, so each series it catches waits for a yes on the page, and it can
-// name the library its series go to. A rule can also be pointed at the
-// catalog's existing series, to add the back catalogue by hand.
+// name the library its series go to. A rule that would add more than a
+// handful of series in one check adds none of them: they wait for a yes too.
+// A rule can also be pointed at the catalog's existing series, to add the
+// back catalogue by hand.
 import Database from 'better-sqlite3';
 import config from '../../src/config.js';
 import { makeCvClient } from '../../src/cv.js';
@@ -23,7 +25,7 @@ import * as notifications from '../../src/notifications.js';
 import * as logstore from '../../src/logstore.js';
 import * as jobs from '../../src/jobs.js';
 import { openStore } from './store.js';
-import { cleanRule, alreadyOut, pickExisting } from './match.js';
+import { cleanRule, alreadyOut, pickExisting, BURST_MAX } from './match.js';
 import { makeFeed, makeScanner, matchesFor, WEEKS_AHEAD } from './scan.js';
 
 const JOB_ID = 'autoadd-scan';
@@ -150,6 +152,17 @@ export default async function register(api) {
           params: { title: m.series, keyword: m.keyword },
         });
       },
+      // A rule caught more series at once than it adds on its own: one note
+      // for the lot, not one per series.
+      burst(b) {
+        log('info', `Rule "${b.keyword}" caught ${b.count} series at once: all of them wait for a yes or no`);
+        tell({
+          type: 'autoadd.burst', category: 'release', level: 'info',
+          title: `“${b.keyword}” caught ${b.count} series at once`,
+          body: 'That is more than Auto-add adds on its own. Add or skip them on the Auto-add page.',
+          params: { keyword: b.keyword, count: b.count },
+        });
+      },
       added(done) {
         log('info', `Added ${done.series} (rule "${done.keyword}")${done.queued ? `, ${done.queued} released issue${done.queued === 1 ? '' : 's'} queued` : ''}`);
         if (++added > NOTE_EACH) return;
@@ -190,11 +203,12 @@ export default async function register(api) {
   async function runPass(db, startDownloads) {
     if (scanner?.busy()) return scanner.run();
     const say = announcer(db);
-    scanner = makeScanner({ store, feed, tracked: trackedIn(db), add: adder(db, startDownloads), onAdded: say.added, onWaiting: say.waiting, onAsk: say.ask, log });
+    scanner = makeScanner({ store, feed, tracked: trackedIn(db), add: adder(db, startDownloads), onAdded: say.added, onWaiting: say.waiting, onAsk: say.ask, onBurst: say.burst, log });
     try {
       const summary = await scanner.run();
       say.rest();
       if (summary.added.length || summary.failed.length) log('info', `Auto-add: ${summary.added.length} added, ${summary.failed.length} failed, ${summary.waiting} waiting for a catalog record, ${summary.asking} waiting for a yes or no`);
+      else if (summary.held) log('info', `Auto-add: ${summary.held} series put on hold for a yes or no`);
       return summary;
     } finally { scanner = null; }
   }
@@ -240,7 +254,10 @@ export default async function register(api) {
     try { await handler(req, res); }
     catch (e) { res.status(500).json({ error: String(e?.message || e) }); }
   }, { access: ACCESS });
-  const caught = (rules) => matchesFor(rules, { feed, tracked: trackedIn(ownDb()), store });
+  // What the given rules catch. The saved rules as a whole are looked at with
+  // `hold`, so a rule that catches too much has it put on hold on first sight.
+  const caught = (rules, opts = {}) => matchesFor(rules, { feed, tracked: trackedIn(ownDb()), store, ...opts });
+  const caughtNow = () => caught(store.rules(), { hold: true });
   const kick = (req) => () => { try { req.app?.locals?.startDownloads?.(); } catch { /* older core: the queue picks them up at its next kick */ } };
 
   // Rules, what they have done so far, and the last pass.
@@ -252,20 +269,23 @@ export default async function register(api) {
       lastRun: store.getMeta('lastRun'),
       running: !!scanner?.busy(),
       weeksAhead: WEEKS_AHEAD,
+      burstMax: BURST_MAX,
     });
   });
 
   // What the saved rules catch in the weeks ahead.
   route('get', '/api/autoadd/matches', async (req, res) => {
-    try { res.json(await caught(store.rules())); }
+    try { res.json(await caughtNow()); }
     catch (e) { res.json({ matches: [], error: String(e?.message || e) }); }
   });
 
-  // What a rule would catch, before it is saved.
+  // What a rule would catch, before it is saved. A rule being changed says
+  // which one it is (`id`), so what it has on hold now does not colour the
+  // look at what it would do once saved.
   route('post', '/api/autoadd/preview', async (req, res) => {
     const { rule, error } = cleanRule(req.body || {});
     if (error) return res.json({ matches: [], invalid: error });
-    try { res.json(await caught([{ ...rule, id: 0, enabled: true }])); }
+    try { res.json(await caught([{ ...rule, id: 0, enabled: true }], { exceptRule: Number(req.body?.id) || null })); }
     catch (e) { res.json({ matches: [], error: String(e?.message || e) }); }
   });
 
@@ -302,13 +322,16 @@ export default async function register(api) {
       const c = checkedRule(body, cur.id);
       if (!c.rule) return res.status(c.status).json({ error: c.error, code: c.code });
       patch = c.rule;
+      store.releaseHolds(cur.id); // a changed rule is judged afresh
     }
     if (body.enabled !== undefined) patch.enabled = !!body.enabled;
     res.json({ rule: store.updateRule(cur.id, patch) });
   });
 
   route('post', '/api/autoadd/rules/:id/delete', (req, res) => {
-    res.json({ deleted: store.deleteRule(req.params.id) });
+    const deleted = store.deleteRule(req.params.id);
+    if (deleted) store.releaseHolds(req.params.id);
+    res.json({ deleted });
   });
 
   // The back catalogue: existing series this rule's name test catches. A
@@ -360,7 +383,7 @@ export default async function register(api) {
   // what the rules catch right now, so only a caught series can be skipped.
   route('post', '/api/autoadd/skip', async (req, res) => {
     const key = String(req.body?.key || '');
-    const { matches } = await caught(store.rules());
+    const { matches } = await caughtNow();
     const m = matches.find((x) => x.key === key);
     if (!m) return res.status(404).json({ error: 'no rule catches that series right now', code: 'gone' });
     if (m.state === 'new' || m.state === 'ask') store.record('skipped', m, null);
@@ -369,12 +392,13 @@ export default async function register(api) {
     res.json({ skipped: true });
   });
 
-  // "Yes, this one", for a series whose rule asks first. One the catalog
+  // "Yes, this one", for a series that is on hold: its rule asks first, or
+  // caught too many at once. One the catalog
   // already has a record for is added on the spot; one still waiting for its
   // record is added when that arrives.
   route('post', '/api/autoadd/approve', async (req, res) => {
     const key = String(req.body?.key || '');
-    const { matches } = await caught(store.rules());
+    const { matches } = await caughtNow();
     const m = matches.find((x) => x.key === key);
     if (!m) return res.status(404).json({ error: 'no rule catches that series right now', code: 'gone' });
     if (m.state === 'waiting' && m.needsOk) { store.approvePending(m); return res.json({ approved: true }); }

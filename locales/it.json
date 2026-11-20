@@ -106,7 +106,8 @@
       "other": "Non è stato possibile aggiungere {count} serie. Si riprova al prossimo controllo."
     },
     "nothing": "Niente di nuovo da aggiungere",
-    "now": "Controlla ora"
+    "now": "Controlla ora",
+    "held": "{count} serie attendono il tuo OK"
   },
   "preview": {
     "loading": "Lettura delle prossime settimane…",
@@ -119,7 +120,8 @@
     "more": {
       "one": "e {count} altra",
       "other": "e altre {count}"
-    }
+    },
+    "burst": "Più di {max} di queste serie verrebbero aggiunte in una volta, quindi Aggiunta automatica non le aggiungerà da sola. Attenderanno il tuo OK in questa pagina."
   },
   "matches": {
     "loading": "Lettura dell’elenco delle uscite…",
@@ -149,6 +151,11 @@
   "menu": {
     "label": "Aggiunta automatica",
     "title": "Regole che aggiungono per te le serie in arrivo"
+  },
+  "burst": {
+    "note": "“{keyword}” ha catturato più di {max} serie in una volta. È più di quanto Aggiunta automatica aggiunge da sola, quindi attendono il tuo OK.",
+    "addAll": "Aggiungi tutte e {count}",
+    "confirm": "Aggiungere tutte le {count} serie alla tua biblioteca?"
   },
   "_shared": {
     "plugins": {
@@ -193,6 +200,10 @@
       "autoaddAskMore": {
         "title": "Altre {count} serie attendono il tuo OK",
         "body": "L’elenco completo è in Aggiunta automatica."
+      },
+      "autoaddBurst": {
+        "title": "“{keyword}” ha catturato {count} serie in una volta",
+        "body": "È più di quanto Aggiunta automatica aggiunge da sola. Aggiungile o escludile nella pagina Aggiunta automatica."
       }
     }
   }

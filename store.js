@@ -4,8 +4,8 @@
 // what keeps a series from being added a second time after it was removed.
 // autoadd_pending holds the series a rule caught before the release list had
 // a catalog id for them: they are known by name until the id arrives. A
-// series held for a yes or no (its rule asks first) is kept there too, with
-// the answer once there is one.
+// series held for a yes or no (its rule asks first, or it caught too many at
+// once) is kept there too, with the answer once there is one.
 import Database from 'better-sqlite3';
 
 const NOW = "strftime('%Y-%m-%dT%H:%M:%SZ','now')";
@@ -46,6 +46,7 @@ export function openStore(dbPath) {
       skipped INTEGER NOT NULL DEFAULT 0,
       approved INTEGER NOT NULL DEFAULT 0,        -- someone said yes to a rule that asks first
       asked INTEGER NOT NULL DEFAULT 0,           -- people were told it needs a yes or no
+      held INTEGER NOT NULL DEFAULT 0,            -- on hold: its rule caught too many series at once
       first_seen TEXT NOT NULL DEFAULT (${NOW})
     );
     CREATE TABLE IF NOT EXISTS autoadd_meta (key TEXT PRIMARY KEY, value TEXT);
@@ -58,6 +59,7 @@ export function openStore(dbPath) {
   const pendingCols = db.prepare("SELECT name FROM pragma_table_info('autoadd_pending')").all().map((r) => r.name);
   if (!pendingCols.includes('approved')) db.exec('ALTER TABLE autoadd_pending ADD COLUMN approved INTEGER NOT NULL DEFAULT 0');
   if (!pendingCols.includes('asked')) db.exec('ALTER TABLE autoadd_pending ADD COLUMN asked INTEGER NOT NULL DEFAULT 0');
+  if (!pendingCols.includes('held')) db.exec('ALTER TABLE autoadd_pending ADD COLUMN held INTEGER NOT NULL DEFAULT 0');
 
   const shape = (r) => r && ({
     id: r.id, keyword: r.keyword, publisher: r.publisher || '', exclude: r.exclude || '',
@@ -144,12 +146,35 @@ export function openStore(dbPath) {
     // True the first time a series is found to need a yes or no, which is
     // when people are told so.
     markAsked: (nameKey) => db.prepare('UPDATE autoadd_pending SET asked = 1 WHERE name_key = ? AND asked = 0').run(String(nameKey)).changes > 0,
+    // Series on hold because their rule caught too many at once. `exceptRule`
+    // leaves out one rule's holds, to look at that rule as if it were new.
+    heldKeys(exceptRule = null) {
+      const rows = exceptRule == null
+        ? db.prepare('SELECT name_key FROM autoadd_pending WHERE held = 1').all()
+        : db.prepare('SELECT name_key FROM autoadd_pending WHERE held = 1 AND (rule_id IS NULL OR rule_id <> ?)').all(Number(exceptRule));
+      return new Set(rows.map((r) => r.name_key));
+    },
+    // Put a series on hold for the rule that caught it. True the first time.
+    hold(m) {
+      this.pend(m);
+      return db.prepare('UPDATE autoadd_pending SET held = 1, rule_id = ?, keyword = ? WHERE name_key = ? AND held = 0')
+        .run(m.ruleId ?? null, m.keyword ?? null, m.nameKey).changes > 0;
+    },
+    // A rule that was changed or deleted lets go of what it had on hold: what
+    // the rule catches now is judged afresh.
+    releaseHolds: (ruleId) => db.prepare('DELETE FROM autoadd_pending WHERE held = 1 AND rule_id = ?').run(Number(ruleId)).changes,
     unskipPending: (nameKey) => db.prepare('UPDATE autoadd_pending SET skipped = 0 WHERE name_key = ? AND skipped = 1').run(String(nameKey)).changes > 0,
     unpend: (nameKey) => db.prepare('DELETE FROM autoadd_pending WHERE name_key = ?').run(String(nameKey)).changes > 0,
-    // A series that never got its id is let go after a few months.
-    prunePending(days = 120, now = Date.now()) {
+    // A series that never got its id is let go after a few months, unless a
+    // rule still catches it (`keep`, name keys): a series on hold must not
+    // lose the hold, and slip into the library, just because it has been
+    // waiting for an answer that long.
+    prunePending(days = 120, now = Date.now(), keep = new Set()) {
       const cutoff = new Date(now - days * 86400000).toISOString().slice(0, 19) + 'Z';
-      return db.prepare('DELETE FROM autoadd_pending WHERE first_seen < ?').run(cutoff).changes;
+      const old = db.prepare('SELECT name_key FROM autoadd_pending WHERE first_seen < ?').all(cutoff).filter((r) => !keep.has(r.name_key));
+      const drop = db.prepare('DELETE FROM autoadd_pending WHERE name_key = ?');
+      for (const r of old) drop.run(r.name_key);
+      return old.length;
     },
 
     getMeta(key) {

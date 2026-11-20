@@ -106,7 +106,8 @@
       "other": "{count} series could not be added. They are tried again on the next check."
     },
     "nothing": "Nothing new to add",
-    "now": "Check now"
+    "now": "Check now",
+    "held": "{count} series are waiting for your OK"
   },
   "preview": {
     "loading": "Looking at the weeks ahead…",
@@ -119,7 +120,8 @@
     "more": {
       "one": "and {count} more",
       "other": "and {count} more"
-    }
+    },
+    "burst": "More than {max} of these would be added at once, so Auto-add will not add them on its own. They will wait for your OK on this page."
   },
   "matches": {
     "loading": "Reading the release list…",
@@ -149,6 +151,11 @@
   "menu": {
     "label": "Auto-add",
     "title": "Rules that add upcoming series for you"
+  },
+  "burst": {
+    "note": "“{keyword}” caught more than {max} series at once. That is more than Auto-add adds on its own, so they are waiting for your OK.",
+    "addAll": "Add all {count}",
+    "confirm": "Add all {count} series to your library?"
   },
   "_shared": {
     "plugins": {
@@ -193,6 +200,10 @@
       "autoaddAskMore": {
         "title": "{count} more series need your OK",
         "body": "Auto-add has the full list."
+      },
+      "autoaddBurst": {
+        "title": "“{keyword}” caught {count} series at once",
+        "body": "That is more than Auto-add adds on its own. Add or skip them on the Auto-add page."
       }
     }
   }

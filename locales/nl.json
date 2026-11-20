@@ -106,7 +106,8 @@
       "other": "{count} series konden niet worden toegevoegd. Bij de volgende controle wordt het opnieuw geprobeerd."
     },
     "nothing": "Niets nieuws om toe te voegen",
-    "now": "Nu controleren"
+    "now": "Nu controleren",
+    "held": "{count} series wachten op je akkoord"
   },
   "preview": {
     "loading": "De komende weken worden bekeken…",
@@ -119,7 +120,8 @@
     "more": {
       "one": "en nog {count}",
       "other": "en nog {count}"
-    }
+    },
+    "burst": "Meer dan {max} hiervan zouden tegelijk worden toegevoegd, dus Automatisch toevoegen voegt ze niet uit zichzelf toe. Ze wachten op deze pagina op je akkoord."
   },
   "matches": {
     "loading": "De lijst met nieuwe uitgaven wordt gelezen…",
@@ -149,6 +151,11 @@
   "menu": {
     "label": "Automatisch toevoegen",
     "title": "Regels die komende series voor je toevoegen"
+  },
+  "burst": {
+    "note": "‘{keyword}’ heeft meer dan {max} series tegelijk gevangen. Dat is meer dan Automatisch toevoegen uit zichzelf toevoegt, dus ze wachten op je akkoord.",
+    "addAll": "Alle {count} toevoegen",
+    "confirm": "Alle {count} series aan je bibliotheek toevoegen?"
   },
   "_shared": {
     "plugins": {
@@ -193,6 +200,10 @@
       "autoaddAskMore": {
         "title": "Nog {count} series wachten op je akkoord",
         "body": "De volledige lijst staat bij Automatisch toevoegen."
+      },
+      "autoaddBurst": {
+        "title": "‘{keyword}’ heeft {count} series tegelijk gevangen",
+        "body": "Dat is meer dan Automatisch toevoegen uit zichzelf toevoegt. Voeg ze toe of sla ze over op de pagina Automatisch toevoegen."
       }
     }
   }

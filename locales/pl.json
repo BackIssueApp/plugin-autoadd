@@ -120,7 +120,8 @@
       "other": "Nie udało się dodać {count} serii. Kolejna próba przy następnym sprawdzeniu."
     },
     "nothing": "Nic nowego do dodania",
-    "now": "Sprawdź teraz"
+    "now": "Sprawdź teraz",
+    "held": "Na twoją zgodę czekają serie: {count}"
   },
   "preview": {
     "loading": "Sprawdzanie nadchodzących tygodni…",
@@ -137,7 +138,8 @@
       "few": "i jeszcze {count}",
       "many": "i jeszcze {count}",
       "other": "i jeszcze {count}"
-    }
+    },
+    "burst": "Naraz zostałoby dodanych więcej niż {max} z tych serii, dlatego Automatyczne dodawanie nie doda ich samo. Będą czekać na twoją zgodę na tej stronie."
   },
   "matches": {
     "loading": "Odczytywanie listy premier…",
@@ -167,6 +169,11 @@
   "menu": {
     "label": "Automatyczne dodawanie",
     "title": "Reguły, które dodają za ciebie nadchodzące serie"
+  },
+  "burst": {
+    "note": "Reguła „{keyword}” wyłapała naraz więcej niż {max} serii. To więcej, niż Automatyczne dodawanie dodaje samo, dlatego czekają na twoją zgodę.",
+    "addAll": "Dodaj wszystkie ({count})",
+    "confirm": "Dodać do biblioteki wszystkie serie ({count})?"
   },
   "_shared": {
     "plugins": {
@@ -211,6 +218,10 @@
       "autoaddAskMore": {
         "title": "Na twoją zgodę czekają jeszcze serie: {count}",
         "body": "Pełna lista jest w Automatycznym dodawaniu."
+      },
+      "autoaddBurst": {
+        "title": "Reguła „{keyword}” wyłapała naraz serie: {count}",
+        "body": "To więcej, niż Automatyczne dodawanie dodaje samo. Dodaj je lub pomiń na stronie Automatyczne dodawanie."
       }
     }
   }

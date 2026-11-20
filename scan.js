@@ -2,7 +2,7 @@
 // ahead, see which series the rules catch, and add the new ones. Everything
 // that touches the app (the release list, the library, the add itself) is
 // handed in, so the pass runs against fakes in the tests.
-import { collect, classify } from './match.js';
+import { collect, classify, BURST_MAX } from './match.js';
 
 export const WEEKS_AHEAD = 8; // how far the release list reaches
 export const WEEKS_BACK = 4;  // how long a series that was caught early is followed after it ships
@@ -38,13 +38,17 @@ export function makeFeed({ load, currentWeek, shiftWeek, ahead = WEEKS_AHEAD, ba
 
 // What the rules catch right now, each series with its state (see classify).
 // `store` supplies what is already waiting and what was dealt with before.
-export async function matchesFor(rules, { feed, tracked, store, fresh = false }) {
+// With `hold`, a rule found to catch more than `burstMax` series at once has
+// them put on hold there and then, so that answering some of them does not
+// let the rest through once fewer than that are left. `exceptRule` looks at
+// one rule as if it had nothing on hold yet (a rule being changed).
+export async function matchesFor(rules, { feed, tracked, store, fresh = false, hold = false, burstMax = BURST_MAX, exceptRule = null }) {
   const { weeks, failed } = await feed.weeks({ fresh });
   const caught = collect(rules, weeks, { pending: store.pendingKeys() });
-  return {
-    matches: classify(caught, { tracked: tracked(), handled: store.handled(), skippedKeys: store.skippedKeys(), approvedKeys: store.approvedKeys() }),
-    weeksRead: weeks.length, weeksFailed: failed,
-  };
+  const held = store.heldKeys(exceptRule);
+  const matches = classify(caught, { tracked: tracked(), handled: store.handled(), skippedKeys: store.skippedKeys(), approvedKeys: store.approvedKeys(), heldKeys: held, burstMax });
+  if (hold) for (const m of matches) if (m.hold === 'burst' && !held.has(m.nameKey)) store.hold(m);
+  return { matches, weeksRead: weeks.length, weeksFailed: failed };
 }
 
 // One pass. `add(match)` puts the series in the library and returns
@@ -53,15 +57,19 @@ export async function matchesFor(rules, { feed, tracked, store, fresh = false })
 // list has no catalog id for yet is remembered by name, and `onWaiting` is
 // called the first time it is seen. A series whose rule asks first is held
 // the same way once its id is known, and `onAsk` is called once for it; it is
-// added when someone says yes.
-export function makeScanner({ store, feed, tracked, add, onAdded = () => {}, onWaiting = () => {}, onAsk = () => {}, log = () => {}, clock = () => new Date() }) {
+// added when someone says yes. A rule that would add more than `burstMax`
+// series in this pass adds none of them: they are held like the ones of a
+// rule that asks first, and `onBurst({ ruleId, keyword, count })` is called
+// once for the lot instead of `onAsk` for each.
+export function makeScanner({ store, feed, tracked, add, onAdded = () => {}, onWaiting = () => {}, onAsk = () => {}, onBurst = () => {}, burstMax = BURST_MAX, log = () => {}, clock = () => new Date() }) {
   let running = null;
   async function pass({ fresh = true } = {}) {
     const rules = store.rules();
-    const summary = { at: clock().toISOString(), rules: rules.filter((r) => r.enabled).length, added: [], failed: [], waiting: 0, asking: 0, matched: 0 };
+    const summary = { at: clock().toISOString(), rules: rules.filter((r) => r.enabled).length, added: [], failed: [], waiting: 0, asking: 0, held: 0, matched: 0 };
     if (!summary.rules) { store.setMeta('lastRun', summary); return summary; }
-    const { matches, weeksRead, weeksFailed } = await matchesFor(rules, { feed, tracked, store, fresh });
+    const { matches, weeksRead, weeksFailed } = await matchesFor(rules, { feed, tracked, store, fresh, hold: true, burstMax });
     summary.matched = matches.length; summary.weeksRead = weeksRead; summary.weeksFailed = weeksFailed;
+    const bursts = new Map(); // rule id → what it has newly on hold
     for (const m of matches) {
       if (m.state === 'waiting') {
         summary.waiting++;
@@ -72,7 +80,12 @@ export function makeScanner({ store, feed, tracked, add, onAdded = () => {}, onW
       if (m.state === 'ask') {
         summary.asking++;
         store.pend(m); // followed by name, like a waiting one, until someone answers
-        if (store.markAsked(m.nameKey)) { try { onAsk(m); } catch { /* telling people is best-effort */ } }
+        if (store.markAsked(m.nameKey)) {
+          if (m.hold === 'burst') {
+            const b = bursts.get(m.ruleId) || { ruleId: m.ruleId, keyword: m.keyword, count: 0 };
+            b.count++; bursts.set(m.ruleId, b);
+          } else { try { onAsk(m); } catch { /* telling people is best-effort */ } }
+        }
         continue;
       }
       // The list has its id now: what was known by name moves to the id. A
@@ -96,7 +109,11 @@ export function makeScanner({ store, feed, tracked, add, onAdded = () => {}, onW
         if (e?.rateLimited) break; // the catalog asked us to slow down: the rest wait for the next pass
       }
     }
-    store.prunePending();
+    for (const b of bursts.values()) {
+      summary.held += b.count;
+      try { onBurst(b); } catch { /* telling people is best-effort */ }
+    }
+    store.prunePending(undefined, undefined, new Set(matches.map((m) => m.nameKey)));
     store.setMeta('lastRun', summary);
     return summary;
   }

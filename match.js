@@ -10,6 +10,11 @@ export const isCollected = (type) => !!type && COLLECTED.test(String(type));
 export const SCOPES = ['all', 'new'];
 const MAX_TEXT = 80;
 const MAX_EXCLUDES = 10;
+// The most series one rule adds on its own in a single check. A rule that
+// would add more than this at once is probably wider than its author meant
+// ("Marvel" with nothing else catches some forty series), so none of them
+// are added: they all wait for a yes or no instead.
+export const BURST_MAX = 10;
 
 // Lowercase, accents folded, punctuation to spaces: "Star Trek: Zero Point"
 // and "star trek zero-point" read the same.
@@ -154,23 +159,42 @@ export function collect(rules, weeks, { pending = new Set() } = {}) {
 //   ask      its rule asks first, and nobody has said yes yet
 //   new      will be added on the next run
 // `needsOk` marks a series that is held until someone says yes: every `ask`
-// one, and a `waiting` one whose rule asks first.
+// one, and a `waiting` one whose rule asks first. `hold` says why it is held:
+// 'rule' when its rule asks first, 'burst' when its rule caught more series
+// than it may add on its own in one go.
 // `tracked` maps catalog id to library series id; `handled` maps catalog id to
 // the plugin's own record of it ({ status: 'added' | 'skipped' }); `skippedKeys`
-// and `approvedKeys` hold the name keys of series someone said no or yes to.
-export function classify(matches, { tracked = new Map(), handled = new Map(), skippedKeys = new Set(), approvedKeys = new Set() } = {}) {
-  return matches.map((m) => {
+// and `approvedKeys` hold the name keys of series someone said no or yes to;
+// `heldKeys` those of series an earlier burst put on hold (a hold sticks
+// until someone answers, however few are left). With `burstMax`, a rule that
+// would add more series than that at once has all of them held instead.
+export function classify(matches, { tracked = new Map(), handled = new Map(), skippedKeys = new Set(), approvedKeys = new Set(), heldKeys = new Set(), burstMax = Infinity } = {}) {
+  const out = matches.map((m) => {
     const h = m.cvId ? handled.get(m.cvId) : null;
     const seriesId = m.cvId ? tracked.get(m.cvId) ?? null : null;
-    const held = !!m.ask && !approvedKeys.has(m.nameKey);
+    const why = approvedKeys.has(m.nameKey) ? null : m.ask ? 'rule' : heldKeys.has(m.nameKey) ? 'burst' : null;
     let state = 'new';
     if (h?.status === 'skipped' || skippedKeys.has(m.nameKey)) state = 'skipped';
     else if (!m.cvId) state = 'waiting';
     else if (seriesId != null) state = 'library';
     else if (h?.status === 'added') state = 'removed';
-    else if (held) state = 'ask';
-    return { ...m, state, seriesId, needsOk: held && (state === 'ask' || state === 'waiting') };
+    else if (why) state = 'ask';
+    const needsOk = !!why && (state === 'ask' || state === 'waiting');
+    return { ...m, state, seriesId, needsOk, hold: needsOk ? why : null };
   });
+  // What each rule is about to add on its own. A series someone already said
+  // yes to is not part of the count: it has its answer.
+  const about = new Map();
+  for (const m of out) {
+    if (m.state !== 'new' || approvedKeys.has(m.nameKey)) continue;
+    if (!about.has(m.ruleId)) about.set(m.ruleId, []);
+    about.get(m.ruleId).push(m);
+  }
+  for (const rows of about.values()) {
+    if (rows.length <= burstMax) continue;
+    for (const m of rows) { m.state = 'ask'; m.needsOk = true; m.hold = 'burst'; }
+  }
+  return out;
 }
 
 // Of a just-added series' wanted issues, the ones that are already out. The

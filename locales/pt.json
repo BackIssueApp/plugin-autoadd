@@ -106,7 +106,8 @@
       "other": "Não foi possível adicionar {count} séries. Tenta-se de novo na próxima verificação."
     },
     "nothing": "Nada de novo para adicionar",
-    "now": "Verificar agora"
+    "now": "Verificar agora",
+    "held": "{count} séries aguardam a sua aprovação"
   },
   "preview": {
     "loading": "A consultar as próximas semanas…",
@@ -119,7 +120,8 @@
     "more": {
       "one": "e mais {count}",
       "other": "e mais {count}"
-    }
+    },
+    "burst": "Mais de {max} destas séries seriam adicionadas de uma só vez, por isso a Adição automática não as adiciona por si. Ficam a aguardar a sua aprovação nesta página."
   },
   "matches": {
     "loading": "A ler a lista de lançamentos…",
@@ -149,6 +151,11 @@
   "menu": {
     "label": "Adição automática",
     "title": "Regras que adicionam por si as séries que aí vêm"
+  },
+  "burst": {
+    "note": "«{keyword}» apanhou mais de {max} séries de uma só vez. É mais do que a Adição automática adiciona por si, por isso aguardam a sua aprovação.",
+    "addAll": "Adicionar as {count}",
+    "confirm": "Adicionar as {count} séries à sua biblioteca?"
   },
   "_shared": {
     "plugins": {
@@ -193,6 +200,10 @@
       "autoaddAskMore": {
         "title": "Mais {count} séries precisam da sua aprovação",
         "body": "A lista completa está em Adição automática."
+      },
+      "autoaddBurst": {
+        "title": "«{keyword}» apanhou {count} séries de uma só vez",
+        "body": "É mais do que a Adição automática adiciona por si. Adicione-as ou ignore-as na página Adição automática."
       }
     }
   }

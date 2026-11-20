@@ -1,8 +1,8 @@
 // Auto-add: what a rule catches, what happens to each caught series, the
 // record that keeps a series from being added twice, following a series that
 // was caught before the list had an id for it, holding a series for a yes when
-// its rule asks first, and a whole pass run against a fake release list and a
-// fake library.
+// its rule asks first or caught too many at once, and a whole pass run against
+// a fake release list and a fake library.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -447,6 +447,7 @@ test('store: a database from before ask-first gains the new columns', async () =
     assert.equal(r.keyword, 'Star Trek'); assert.equal(r.ask, false); assert.equal(r.newOnly, false); assert.equal(r.libraryId, null);
     assert.equal(store.approvedKeys().size, 0);
     assert.equal(store.markAsked('star trek held|2026'), true);
+    assert.equal(store.heldKeys().size, 0);
   } finally { store.close(); fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
@@ -513,5 +514,148 @@ test('an unanswered series is followed after it ships, and a no ends it', async 
     const out = await scanner.run();
     assert.equal(out.asking, 0); assert.equal(out.added.length, 0);
     assert.equal(store.pendingKeys().size, 0, 'answered: no longer followed by name');
+  } finally { rm(); }
+});
+
+test('classify: a rule about to add more than the limit has all of them held', () => {
+  const rows = collect([rule('star trek'), { ...rule('batman'), id: 2 }, { ...rule('saga', { ask: true }), id: 3 }], [week([
+    rel('Star Trek: A', { comicid: 1 }), rel('Star Trek: B', { comicid: 2 }), rel('Star Trek: C', { comicid: 3 }),
+    rel('Star Trek: Unknown', { comicid: null }), rel('Star Trek: Mine', { comicid: 4 }),
+    rel('Batman', { comicid: 9 }), rel('Batman: Two', { comicid: 10 }),
+    rel('Saga', { comicid: 20 }),
+  ])]);
+  const mine = new Map([[4, 44]]);
+  const st = (opts) => Object.fromEntries(classify(rows, { tracked: mine, ...opts }).map((m) => [m.series, [m.state, m.hold, m.needsOk]]));
+
+  // No limit given: nothing changes.
+  assert.deepEqual(st({})['Star Trek: A'], ['new', null, false]);
+
+  // Three are about to be added by the first rule: more than two, so all
+  // three are held. What is waiting or already in the library is not part of
+  // the count, and the other rules are judged on their own.
+  const two = st({ burstMax: 2 });
+  for (const s of ['Star Trek: A', 'Star Trek: B', 'Star Trek: C']) assert.deepEqual(two[s], ['ask', 'burst', true], s);
+  assert.deepEqual(two['Star Trek: Unknown'], ['waiting', null, false]);
+  assert.deepEqual(two['Star Trek: Mine'], ['library', null, false]);
+  assert.deepEqual(two.Batman, ['new', null, false]);
+  assert.deepEqual(two['Batman: Two'], ['new', null, false]);
+  assert.deepEqual(two.Saga, ['ask', 'rule', true], 'a rule that asks first is held for that reason');
+
+  // Exactly the limit is not more than the limit.
+  assert.deepEqual(st({ burstMax: 3 })['Star Trek: A'], ['new', null, false]);
+
+  // A hold from an earlier burst sticks, however few are left.
+  const stuck = st({ heldKeys: new Set([nameKeyOf('Star Trek: B', '2026')]), burstMax: 3 });
+  assert.deepEqual(stuck['Star Trek: B'], ['ask', 'burst', true]);
+  assert.deepEqual(stuck['Star Trek: A'], ['new', null, false]);
+
+  // A series someone already said yes to is not counted, and not held.
+  const yes = st({ approvedKeys: new Set([nameKeyOf('Star Trek: A', '2026')]), burstMax: 2 });
+  assert.deepEqual(yes['Star Trek: A'], ['new', null, false]);
+  assert.deepEqual(yes['Star Trek: B'], ['new', null, false]);
+});
+
+test('store: a hold sticks, belongs to its rule, and outlives the age prune while its series is still caught', () => {
+  const { store, rm } = tmpStore();
+  try {
+    const m = { nameKey: 'star trek a|2026', series: 'Star Trek: A', seriesYear: '2026', ruleId: 3, keyword: 'star trek' };
+    assert.equal(store.hold(m), true);
+    assert.equal(store.hold(m), false, 'already on hold');
+    assert.ok(store.heldKeys().has(m.nameKey));
+    assert.equal(store.heldKeys(3).size, 0, 'left out when its own rule is looked at afresh');
+    assert.equal(store.heldKeys(4).size, 1);
+
+    const farAhead = Date.now() + 121 * 86400000;
+    assert.equal(store.prunePending(120, farAhead, new Set([m.nameKey])), 0, 'still caught: the hold stays');
+    assert.equal(store.heldKeys().size, 1);
+
+    assert.equal(store.releaseHolds(4), 0);
+    assert.equal(store.releaseHolds(3), 1);
+    assert.equal(store.heldKeys().size, 0);
+
+    store.hold(m);
+    assert.equal(store.prunePending(120, farAhead), 1, 'no longer caught and old: let go');
+  } finally { rm(); }
+});
+
+test('a rule that catches too many at once adds none, says so once, and the hold sticks', async () => {
+  const { store, rm } = tmpStore();
+  try {
+    const saved = store.createRule(cleanRule({ keyword: '', publisher: 'IDW' }).rule);
+    const names = ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo'];
+    const byWeek = { 48: [...names.map((n, i) => rel(n, { comicid: 900 + i })), rel('Unknown', { comicid: null })] };
+    const { feed } = fakeFeed(byWeek);
+    const library = new Map(); const added = []; const asked = []; const bursts = [];
+    const scanner = makeScanner({
+      store, feed, burstMax: 3, tracked: () => new Map(library),
+      add: async (m) => { library.set(m.cvId, 500 + added.length); added.push(m.series); return { seriesId: library.get(m.cvId) }; },
+      onAsk: (m) => asked.push(m.series), onBurst: (b) => bursts.push([b.keyword, b.count]),
+    });
+
+    const first = await scanner.run();
+    assert.equal(first.added.length, 0, 'five at once is more than three: none added');
+    assert.equal(first.asking, 5); assert.equal(first.held, 5); assert.equal(first.waiting, 1);
+    assert.deepEqual(bursts, [['IDW', 5]], 'one note for the lot');
+    assert.deepEqual(asked, [], 'and none per series');
+
+    const second = await scanner.run();
+    assert.equal(second.held, 0); assert.equal(bursts.length, 1, 'not said again');
+    assert.equal(added.length, 0);
+
+    // The page sees them as held, by the saved hold, whatever limit it applies.
+    const look = async () => (await matchesFor(store.rules(), { feed, tracked: () => new Map(library), store })).matches;
+    const held = (await look()).filter((m) => m.hold === 'burst');
+    assert.equal(held.length, 5);
+    assert.ok(held.every((m) => m.state === 'ask' && m.needsOk));
+
+    // Three answered by hand (what "Add" on the page does). Two are left:
+    // fewer than the limit, and still held.
+    for (const m of held.slice(0, 3)) { library.set(m.cvId, 600 + m.cvId); store.record('added', m, library.get(m.cvId)); store.unpend(m.nameKey); }
+    const third = await scanner.run();
+    assert.equal(third.added.length, 0);
+    assert.equal(third.asking, 2);
+
+    // A series caught later is judged on its own: one is not too many.
+    byWeek[48].push(rel('Foxtrot', { comicid: 950 }));
+    assert.deepEqual((await scanner.run()).added.map((a) => a.series), ['Foxtrot']);
+    // So is one whose record arrives.
+    byWeek[48][5] = rel('Unknown', { comicid: 951 });
+    assert.deepEqual((await scanner.run()).added.map((a) => a.series), ['Unknown']);
+    assert.equal((await look()).filter((m) => m.hold === 'burst').length, 2);
+
+    // Changing the rule lets go of its holds: the two left are no burst.
+    assert.equal(store.releaseHolds(saved.id), 2);
+    assert.deepEqual((await scanner.run()).added.map((a) => a.series).sort(), ['Delta', 'Echo']);
+    assert.equal(bursts.length, 1);
+  } finally { rm(); }
+});
+
+test('a look at the saved rules puts a burst on hold before any pass does', async () => {
+  const { store, rm } = tmpStore();
+  try {
+    store.createRule(cleanRule({ keyword: 'star trek' }).rule);
+    const byWeek = { 48: ['One', 'Two', 'Three', 'Four'].map((n, i) => rel('Star Trek: ' + n, { comicid: 300 + i })) };
+    const { feed } = fakeFeed(byWeek);
+    const library = new Map();
+    const opts = { feed, tracked: () => new Map(library), store, burstMax: 3 };
+
+    // A preview-style look holds nothing.
+    assert.equal((await matchesFor(store.rules(), opts)).matches.filter((m) => m.hold === 'burst').length, 4);
+    assert.equal(store.heldKeys().size, 0);
+
+    // The page's look at the saved rules does, so saying yes to two of the
+    // four does not let the other two through.
+    const { matches } = await matchesFor(store.rules(), { ...opts, hold: true });
+    assert.equal(store.heldKeys().size, 4);
+    for (const m of matches.slice(0, 2)) { library.set(m.cvId, 1); store.record('added', m, 1); store.unpend(m.nameKey); }
+    const left = (await matchesFor(store.rules(), { ...opts, hold: true })).matches.filter((m) => m.state === 'ask');
+    assert.equal(left.length, 2);
+
+    // The pass that follows tells people once, and adds nothing.
+    const bursts = [];
+    const scanner = makeScanner({ store, feed, burstMax: 3, tracked: () => new Map(library), add: async () => { throw new Error('must not add'); }, onBurst: (b) => bursts.push(b.count) });
+    const out = await scanner.run();
+    assert.equal(out.added.length, 0);
+    assert.deepEqual(bursts, [2]);
   } finally { rm(); }
 });

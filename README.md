@@ -67,6 +67,12 @@ after it. For each series a rule catches that is not in your library yet:
   it is still waiting for details you can press **Add when ready**, and it is
   added on the first check after its record arrives. A series you never answer
   stays on the page until four weeks after its issue ships.
+- **A rule that would add more than ten series in one check** adds none of
+  them. They all show as **Needs your OK**, a note above the list says why,
+  and one notification tells you. Press **Add** or **Skip** on each, or
+  **Add all** to take the lot. The page warns you before you save a rule that
+  wide. After that the rule carries on as usual: the one or two new series it
+  catches in a later check are added without asking.
 
 Once a series is added:
 
@@ -95,6 +101,9 @@ is added on its own: you choose each time.
   for a series about to be added and for one still waiting for details.
 - Turn on **Ask before adding** for a rule you want the last word on. It then
   only proposes series, and you add the ones you want.
+- No rule adds more than ten series in one go on its own. A bigger catch
+  waits for your OK, so a rule that turns out wider than you meant cannot fill
+  your library unasked.
 - A series is added once. If you delete it from your library later, it does not
   come back. **Add again** on the page lifts that.
 - Deleting a rule leaves the series it already added in your library.
@@ -109,10 +118,6 @@ is added on its own: you choose each time.
   brand-new series that is close to release, not eight weeks before. You are
   told about the series when it is caught, and nothing is lost by the wait:
   issues that shipped in the meantime are queued when the series is added.
-- The release list knows a series' publisher only once the catalog has a
-  record for it. A rule that names a publisher therefore catches a brand-new
-  series when its record arrives, without the early **Coming up** notice. A
-  rule with a name and no publisher hears about it weeks sooner.
 - A rule with a name matches the series name only. A tie-in that does not
   carry the phrase in its name is not caught.
 - **Existing series** needs a name to search for, so a rule with only a

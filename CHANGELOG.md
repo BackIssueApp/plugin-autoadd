@@ -39,6 +39,10 @@ by the maintainers when changes merge, so concurrent PRs don't conflict here.
   at what the changed rule would catch.
 - **Add to** picks the library a rule's series go to, when there is more than
   one comics library.
+- A rule that would add more than ten series in one check adds none of them.
+  They wait as **Needs your OK** under a note that says why, one notification
+  tells you, and **Add all** takes the lot. The rule form warns before a rule
+  that wide is saved.
 - **Caught in the weeks ahead** lists each caught series and what will happen
   to it, with **Skip** to keep one out, whether it is about to be added or
   still waiting. A series is added once: deleting it later does not bring it

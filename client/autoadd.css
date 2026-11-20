@@ -47,6 +47,17 @@
 .aa-dim { color: var(--faint, #8b84a0); font-weight: 400; }
 .aa-empty, .aa-note { margin: 0; font-size: 13px; color: var(--faint, #8b84a0); }
 .aa-note--bad { color: var(--red, #ff5a52); }
+.aa-note--warn { color: var(--amber, #ffc24b); }
+.aa__preview .aa-note--warn { margin-top: 10px; }
+/* A rule that caught more than it adds on its own: the note above the list. */
+.aa-burst {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px;
+  padding: 10px 12px; background: var(--panel, #1e1b27);
+  border: 1px solid color-mix(in srgb, var(--accent, #ff2d6f) 55%, transparent); border-radius: var(--radius-sm, 7px);
+}
+.aa-burst > .aa-note { flex: 1 1 280px; color: var(--text, #ece8f1); line-height: 1.45; }
+.aa-burst__acts { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.aa-burst__acts:empty { display: none; }
 
 .aa-chip {
   flex: none; padding: 2px 8px; border: 1px solid var(--line, #352f44); border-radius: 999px;

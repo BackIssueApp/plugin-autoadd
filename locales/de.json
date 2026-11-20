@@ -106,7 +106,8 @@
       "other": "{count} Serien konnten nicht hinzugefügt werden. Beim nächsten Prüfen wird es erneut versucht."
     },
     "nothing": "Nichts Neues hinzuzufügen",
-    "now": "Jetzt prüfen"
+    "now": "Jetzt prüfen",
+    "held": "{count} Serien warten auf dein OK"
   },
   "preview": {
     "loading": "Die kommenden Wochen werden gelesen…",
@@ -119,7 +120,8 @@
     "more": {
       "one": "und {count} weitere",
       "other": "und {count} weitere"
-    }
+    },
+    "burst": "Mehr als {max} davon würden auf einmal hinzugefügt, deshalb fügt Auto-Hinzufügen sie nicht von sich aus hinzu. Sie warten auf dieser Seite auf dein OK."
   },
   "matches": {
     "loading": "Die Liste der Neuerscheinungen wird gelesen…",
@@ -149,6 +151,11 @@
   "menu": {
     "label": "Auto-Hinzufügen",
     "title": "Regeln, die kommende Serien für dich hinzufügen"
+  },
+  "burst": {
+    "note": "„{keyword}“ hat mehr als {max} Serien auf einmal erfasst. Das ist mehr, als Auto-Hinzufügen von sich aus hinzufügt, deshalb warten sie auf dein OK.",
+    "addAll": "Alle {count} hinzufügen",
+    "confirm": "Alle {count} Serien zu deiner Bibliothek hinzufügen?"
   },
   "_shared": {
     "plugins": {
@@ -193,6 +200,10 @@
       "autoaddAskMore": {
         "title": "{count} weitere Serien warten auf dein OK",
         "body": "Die vollständige Liste steht unter Auto-Hinzufügen."
+      },
+      "autoaddBurst": {
+        "title": "„{keyword}“ hat {count} Serien auf einmal erfasst",
+        "body": "Das ist mehr, als Auto-Hinzufügen von sich aus hinzufügt. Füge sie auf der Seite Auto-Hinzufügen hinzu oder überspringe sie."
       }
     }
   }

@@ -106,7 +106,8 @@
       "other": "{count} séries n’ont pas pu être ajoutées. Nouvel essai à la prochaine vérification."
     },
     "nothing": "Rien de nouveau à ajouter",
-    "now": "Vérifier maintenant"
+    "now": "Vérifier maintenant",
+    "held": "{count} séries attendent votre accord"
   },
   "preview": {
     "loading": "Lecture des semaines à venir…",
@@ -119,7 +120,8 @@
     "more": {
       "one": "et {count} autre",
       "other": "et {count} autres"
-    }
+    },
+    "burst": "Plus de {max} de ces séries seraient ajoutées d’un coup : l’Ajout automatique ne les ajoutera donc pas de lui-même. Elles attendront votre accord sur cette page."
   },
   "matches": {
     "loading": "Lecture de la liste des sorties…",
@@ -149,6 +151,11 @@
   "menu": {
     "label": "Ajout automatique",
     "title": "Des règles qui ajoutent pour vous les séries à venir"
+  },
+  "burst": {
+    "note": "La règle « {keyword} » a retenu plus de {max} séries d’un coup. C’est plus que ce que l’Ajout automatique ajoute de lui-même : elles attendent donc votre accord.",
+    "addAll": "Tout ajouter ({count})",
+    "confirm": "Ajouter les {count} séries à votre bibliothèque ?"
   },
   "_shared": {
     "plugins": {
@@ -193,6 +200,10 @@
       "autoaddAskMore": {
         "title": "{count} autres séries attendent votre accord",
         "body": "La liste complète se trouve dans Ajout automatique."
+      },
+      "autoaddBurst": {
+        "title": "« {keyword} » a retenu {count} séries d’un coup",
+        "body": "C’est plus que ce que l’Ajout automatique ajoute de lui-même. Ajoutez-les ou ignorez-les sur la page Ajout automatique."
       }
     }
   }

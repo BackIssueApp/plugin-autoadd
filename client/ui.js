@@ -39,7 +39,7 @@
     const PREVIEW_MAX = 25;    // series a preview lists before it just counts the rest
 
     let overlay = null;
-    let state = { rules: [], history: [], lastRun: null, weeksAhead: 8 };
+    let state = { rules: [], history: [], lastRun: null, weeksAhead: 8, burstMax: 10 };
     let libraries = [];      // the comic libraries this account can see: { id, name }
     let editing = null;      // id of the rule loaded in the form, when changing one
     let matches = null;      // null = still loading
@@ -320,7 +320,7 @@
         const seq = ++previewSeq;
         paintPreview('<p class="aa-note">' + esc(tr('preview.loading', 'Looking at the weeks ahead…')) + '</p>');
         let r;
-        try { r = await post('/api/autoadd/preview', rule); }
+        try { r = await post('/api/autoadd/preview', { ...rule, id: editing }); }
         catch (e) { r = { matches: [], error: String(e?.message || e) }; }
         if (seq !== previewSeq) return; // an older answer arriving late
         if (r.error) return paintPreview('<p class="aa-note aa-note--bad">' + esc(tr('preview.failed', 'The release list could not be read: {error}', { error: r.error })) + '</p>');
@@ -331,7 +331,9 @@
           '<p class="aa-note">' + esc(tr('preview.count', { one: 'This rule catches {count} series in the next {weeks} weeks:', other: 'This rule catches {count} series in the next {weeks} weeks:' }, { count: list.length, weeks: state.weeksAhead })) + '</p>' +
           '<ul class="aa-preview">' + list.slice(0, PREVIEW_MAX).map((m) =>
             '<li><span class="aa-preview__name">' + nameOf(m) + '</span><span class="aa-dim">' + esc([m.publisher, shipsOf(m)].filter(Boolean).join(' · ')) + '</span>' + chip(m.state) + '</li>').join('') + '</ul>' +
-          (list.length > PREVIEW_MAX ? '<p class="aa-note">' + esc(tr('preview.more', { one: 'and {count} more', other: 'and {count} more' }, { count: list.length - PREVIEW_MAX })) + '</p>' : ''));
+          (list.length > PREVIEW_MAX ? '<p class="aa-note">' + esc(tr('preview.more', { one: 'and {count} more', other: 'and {count} more' }, { count: list.length - PREVIEW_MAX })) + '</p>' : '') +
+          // Said before saving, so a rule wider than intended is no surprise.
+          (list.filter((m) => m.hold === 'burst').length > maxAtOnce() ? '<p class="aa-note aa-note--warn">' + esc(tr('preview.burst', 'More than {max} of these would be added at once, so Auto-add will not add them on its own. They will wait for your OK on this page.', { max: maxAtOnce() })) + '</p>' : ''));
       }, 350);
     }
     async function saveRule(e) {
@@ -352,6 +354,26 @@
     }
 
     // ---- what the rules catch ----
+    const maxAtOnce = () => Number(state.burstMax) || 10;
+    // Say yes to everything one rule has on hold, one series after the other.
+    async function addAllHeld(box, keys) {
+      if (!window.confirm(tr('burst.confirm', 'Add all {count} series to your library?', { count: keys.length }))) return;
+      const note = box.querySelector('.aa-burst__progress');
+      // No answers by hand while the lot goes in.
+      for (const b of overlay.querySelectorAll('.aa__matches button')) b.disabled = true;
+      let added = 0;
+      try {
+        for (let i = 0; i < keys.length; i++) {
+          note.textContent = tr('existing.adding', 'Adding {done} of {total}…', { done: i + 1, total: keys.length });
+          try {
+            const r = await post('/api/autoadd/approve', { key: keys[i] });
+            if (r.added) added++;
+          } catch (err) { if (err.code !== 'gone') throw err; /* answered meanwhile: on to the next */ }
+        }
+      } catch (err) { say(err); }
+      if (added) toast(tr('run.added', { one: '{count} series added', other: '{count} series added' }, { count: added }), 'ok');
+      await reload();
+    }
     function paintMatches() {
       const el = overlay?.querySelector('.aa__matches');
       if (!el) return;
@@ -363,7 +385,23 @@
           : tr('matches.noRules', 'Series your rules catch show up here.')) + '</p>';
         return;
       }
-      el.innerHTML = matches.map((m) => {
+      // A rule that caught more than it adds on its own: say so once, above
+      // the list, with one button for the lot.
+      const bursts = [];
+      for (const m of matches) {
+        if (m.state !== 'ask' || m.hold !== 'burst') continue;
+        let b = bursts.find((x) => x.ruleId === m.ruleId);
+        if (!b) bursts.push(b = { ruleId: m.ruleId, keyword: m.keyword, keys: [] });
+        b.keys.push(m.key);
+      }
+      el.innerHTML = bursts.map((b, i) =>
+        '<div class="aa-burst" data-i="' + i + '">' +
+          '<p class="aa-note">' + esc(tr('burst.note', '“{keyword}” caught more than {max} series at once. That is more than Auto-add adds on its own, so they are waiting for your OK.', { keyword: b.keyword, max: maxAtOnce() })) + '</p>' +
+          '<div class="aa-burst__acts">' +
+            (b.keys.length > 1 ? '<button type="button" class="btn btn--sm aa-burst__all">' + esc(tr('burst.addAll', 'Add all {count}', { count: b.keys.length })) + '</button>' : '') +
+            '<span class="aa-note aa-burst__progress"></span>' +
+          '</div>' +
+        '</div>').join('') + matches.map((m) => {
         let action = '';
         const skip = '<button class="btn btn--ghost btn--sm" data-act="skip">' + esc(tr('matches.skip', 'Skip')) + '</button>';
         // A rule that asks first: yes adds it now, or as soon as it can be.
@@ -379,9 +417,13 @@
           '<div class="aa-row__acts">' + chip(m.state) + action + '</div></div>';
       }).join('');
       wireRowActions(el);
+      for (const box of el.querySelectorAll('.aa-burst')) {
+        const all = box.querySelector('.aa-burst__all');
+        if (all) all.onclick = () => addAllHeld(box, bursts[Number(box.dataset.i)].keys);
+      }
     }
     function wireRowActions(el) {
-      for (const b of el.querySelectorAll('button[data-act]')) {
+      for (const b of el.querySelectorAll('.aa-row button[data-act]')) {
         const row = b.closest('.aa-row');
         b.onclick = async () => {
           try {
@@ -436,7 +478,8 @@
         const n = r?.added?.length || 0;
         if (n) toast(tr('run.added', { one: '{count} series added', other: '{count} series added' }, { count: n }), 'ok');
         else if (r?.failed?.length) toast(tr('run.failed', { one: '{count} series could not be added. It is tried again on the next check.', other: '{count} series could not be added. They are tried again on the next check.' }, { count: r.failed.length }), 'error');
-        else toast(tr('run.nothing', 'Nothing new to add'));
+        else if (!r?.held) toast(tr('run.nothing', 'Nothing new to add'));
+        if (r?.held) toast(tr('run.held', '{count} series are waiting for your OK', { count: r.held }));
       } catch (err) { say(err); }
       btn.disabled = false; btn.textContent = tr('run.now', 'Check now');
       await reload();
